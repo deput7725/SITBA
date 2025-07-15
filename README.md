@@ -71,12 +71,20 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 ```bash
 composer global require laravel/installer
 ```
-### 3. migration
+### 3. Install Package
+```bash
+npm install
+npm run build
+```
+### 4. migration
 ```bash
 php artisan migrate
 ```
 next type yes
-### 4. Run Laravel
+### 5. Run Laravel
 ```bash
 php artisan serve
 ```
+
+## Documentation Link
+[API documentation]([https://laravel.com/docs/contributions](https://documenter.getpostman.com/view/40220961/2sB34hHMEP)).
