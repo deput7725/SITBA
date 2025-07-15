@@ -87,4 +87,4 @@ php artisan serve
 ```
 
 ## Documentation Link
-[API documentation]([https://laravel.com/docs/contributions](https://documenter.getpostman.com/view/40220961/2sB34hHMEP)).
+[API documentation](https://documenter.getpostman.com/view/40220961/2sB34hHMEP).
