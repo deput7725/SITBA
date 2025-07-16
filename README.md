@@ -74,13 +74,13 @@ buka CommandPromt(CMD) and masuk ke direktori project dan jalan kan perintah ini
 composer install
 ```
 ### 3. Install Package
-jalan kan perintah ini di CMD juga
+jalan kan perintah ini di CMD atau Terminal VS code 
 ```bash
 npm install
 npm run build
 ```
 ### 4. migration
-jalan kan perintah ini di CMD
+jalan kan perintah ini di CMD atau Terminal VS code 
 ```bash
 php artisan migrate
 ```
