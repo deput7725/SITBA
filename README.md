@@ -64,28 +64,33 @@ The Laravel framework is open-sourced software licensed under the [MIT license](
 ### 1. install Laravel 
 instal Laravel in Windows PowerShell Run as Run as administrator...
 copy this and paste in Windows PowerShell
+jalan kan perintah ini di Windows PowerShell dan jalan kan dengan Run as administrator
 ```bash
 Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://php.new/install/windows/8.4'))
 ```
 ### 2.  install the Laravel installer via Composer
-Open CommandPromt(CMD) and run this command
+buka CommandPromt(CMD) and masuk ke direktori project dan jalan kan perintah ini
 ```bash
-composer global require laravel/installer
+composer install
 ```
 ### 3. Install Package
+jalan kan perintah ini di CMD juga
 ```bash
 npm install
 npm run build
 ```
 ### 4. migration
+jalan kan perintah ini di CMD
 ```bash
 php artisan migrate
 ```
 next type yes
 ### 5. Run Laravel
+perintah ini dapat di jalankan di CMD maupun Terminal VS code 
 ```bash
 php artisan serve
 ```
 
 ## Documentation Link
+ini link cara penggunaan api nya
 [API documentation](https://documenter.getpostman.com/view/40220961/2sB34hHMEP).
