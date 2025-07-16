@@ -86,7 +86,7 @@ php artisan migrate
 ```
 next type yes
 ### 5. Run Laravel
-perintah ini dapat di jalankan di CMD maupun Terminal VS code 
+perintah ini dapat di jalankan di CMD atau Terminal VS code 
 ```bash
 php artisan serve
 ```
