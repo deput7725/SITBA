@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\PendaftaranZakatResource;
-use App\Imports\PendaftaranZakatImport;
+use App\Imports\PendaftaranZakatUpsertImport;
 use App\Models\Lembaga;
 use App\Models\PendaftaranZakat;
 use Exception;
@@ -134,6 +134,13 @@ class PendaftaranZakatController extends Controller
         return $this->handleImport($request, $id_lb);
     }
 
+    /**
+     * Method private untuk menangani logika import (Create & Update).
+     *
+     * @param Request $request
+     * @param string|null $idLembaga
+     * @return \Illuminate\Http\JsonResponse
+     */
     private function handleImport(Request $request, ?string $idLembaga)
     {
         $validator = Validator::make($request->all(), ['file' => 'required|file|mimes:xlsx,csv,xls']);
@@ -143,37 +150,10 @@ class PendaftaranZakatController extends Controller
 
         DB::beginTransaction();
         try {
-            Excel::import(new PendaftaranZakatImport($idLembaga), $request->file('file'));
-            DB::commit();
-            $message = $idLembaga ? 'Data lembaga' : 'Data perorangan';
-            return response()->json(['message' => $message . ' berhasil diimpor!'], 200);
-        } catch (Exception $e) {
-            DB::rollBack();
-            return response()->json(['message' => 'Terjadi kesalahan saat mengimpor data.', 'error' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Mengupdate data pendaftaran secara massal dari file.
-     */
-    public function updateFromFile(Request $request)
-    {
-        $validator = Validator::make($request->all(), [
-            'file' => 'required|file|mimes:xlsx,csv,xls',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
-        }
-
-        // Gunakan transaction untuk memastikan integritas data.
-        // Jika satu baris gagal, semua perubahan akan dibatalkan.
-        DB::beginTransaction();
-        try {
             $file = $request->file('file');
-
-            // Buat instance dari kelas import kita
-            $import = new PendaftaranZakatUpdateImport();
+            
+            // Buat instance dari kelas import UPSERT yang baru
+            $import = new PendaftaranZakatUpsertImport($idLembaga);
             
             // Jalankan proses import
             Excel::import($import, $file);
@@ -185,17 +165,17 @@ class PendaftaranZakatController extends Controller
             $stats = $import->getStats();
 
             return response()->json([
-                'message' => 'Proses update massal selesai.',
+                'message' => 'Proses impor (Create & Update) selesai.',
                 'data' => [
+                    'records_created' => $stats['created'],
                     'records_updated' => $stats['updated'],
-                    'records_skipped' => $stats['skipped'],
+                    'records_failed' => $stats['failed'],
+                    'failures' => $stats['failures'],
                 ]
             ], 200);
 
         } catch (Exception $e) {
-            // Jika terjadi error, batalkan semua perubahan
             DB::rollBack();
-
             return response()->json([
                 'message' => 'Terjadi kesalahan saat memproses file.',
                 'error' => $e->getMessage()

@@ -26,3 +26,7 @@ Route::post('pendaftaran-zakat/update-from-file', [PendaftaranZakatController::c
 
 // --- RUTE BARU UNTUK IMPORT KAS MASUK ---
 Route::post('kas-masuk/import', [KasMasukController::class, 'import']);
+// Rute untuk mencetak SATU bukti setor
+Route::get('kas-masuk/{kasMasuk}/cetak-bukti-pdf-from-word', [KasMasukController::class, 'cetakBuktiPdfFromWord']);
+// Rute untuk mencetak BANYAK bukti setor (batch)
+Route::post('kas-masuk/cetak-bukti-pdf-batch-from-word', [KasMasukController::class, 'cetakBuktiPdfBatchFromWord']);

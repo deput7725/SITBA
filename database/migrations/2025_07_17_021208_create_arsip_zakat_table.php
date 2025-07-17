@@ -1,5 +1,6 @@
+
 <?php
-// File: database/migrations/xxxx_xx_xx_xxxxxx_create_arsip_zakats_table.php
+// File: database/migrations/xxxx_xx_xx_xxxxxx_create_arsip_zakat_table.php
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
@@ -14,14 +15,13 @@ return new class extends Migration
     {
         Schema::create('arsip_zakat', function (Blueprint $table) {
             $table->id();
-            // Data dari pendaftaran_zakat
             $table->string('nama', 100);
             $table->string('npwp', 100)->nullable();
             $table->string('nik', 30)->nullable();
             $table->string('nip', 30)->nullable();
             $table->date('tanggal_lahir')->nullable();
             $table->string('tempat_lahir', 100)->nullable();
-            $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan']);
+            $table->enum('jenis_kelamin', ['Laki-laki','Perempuan']);
             $table->string('pekerjaan', 100)->nullable();
             $table->text('alamat_korespondensi')->nullable();
             $table->text('alamat_rumah')->nullable();
@@ -32,17 +32,13 @@ return new class extends Migration
             $table->string('upz', 100)->nullable();
             $table->bigInteger('zakat_awal')->default(0);
             $table->text('catatan')->nullable();
-            $table->enum('tipe_muzaki', ['Perorangan', 'Lembaga']);
-
-            // Data dari kas_masuk
+            $table->enum('tipe_muzaki', ['Perorangan','Lembaga']);
             $table->integer('NO')->nullable();
-            $table->date('tgl_transaksi');
+            $table->date('tgl_transaksi')->nullable();
             $table->bigInteger('zakat_ulang')->default(0);
             $table->bigInteger('zakat_fitrah')->default(0);
             $table->bigInteger('infak')->default(0);
             $table->text('keterangan')->nullable();
-
-            // Informasi waktu arsip
             $table->timestamp('tanggal_arsip')->useCurrent();
             $table->timestamps();
         });

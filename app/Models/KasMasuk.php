@@ -1,5 +1,4 @@
 <?php
-// File: app/Models/KasMasuk.php
 
 namespace App\Models;
 
@@ -17,9 +16,22 @@ class KasMasuk extends Model
         'tgl_transaksi',
         'npwz',
         'nama',
+        'nik',
         'zakat',
         'zakat_fitrah',
         'infak',
         'keterangan',
     ];
+
+    /**
+     * Mendefinisikan relasi ke PendaftaranZakat.
+     * Fungsi ini akan mencoba mencocokkan kolom 'npwz' dari tabel ini
+     * dengan kolom 'nik' di tabel pendaftaran_zakat.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
+     */
+    public function pendaftaran()
+    {
+        return $this->belongsTo(PendaftaranZakat::class, 'npwz', 'nik');
+    }
 }
