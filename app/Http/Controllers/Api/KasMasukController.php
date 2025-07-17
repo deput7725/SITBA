@@ -13,6 +13,8 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\IOFactory;
 use Terbilang;
+use App\Imports\KasMasukImport;
+use Maatwebsite\Excel\Facades\Excel;
 
 class KasMasukController extends Controller
 {
@@ -82,23 +84,18 @@ class KasMasukController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        // Kita tidak lagi menggunakan DB::beginTransaction() di sini karena
-        // logika insert sudah ditangani secara massal di dalam kelas Import.
         try {
             $file = $request->file('file');
 
-            // Buat instance dari kelas import
+            // Baris ini sekarang akan berfungsi karena class KasMasukImport sudah ditemukan
             $import = new KasMasukImport();
             
-            // Jalankan proses import
             Excel::import($import, $file);
 
-            // Ambil statistik dari proses import
             $successCount = $import->getSuccessCount();
             $failedRows = $import->getFailedRows();
             $failedCount = count($failedRows);
 
-            // Bangun pesan respon berdasarkan hasil
             $message = "Proses impor selesai. {$successCount} data berhasil diimpor";
             if ($failedCount > 0) {
                 $message .= " dan {$failedCount} data gagal.";
@@ -111,7 +108,7 @@ class KasMasukController extends Controller
                 'data' => [
                     'success_count' => $successCount,
                     'failed_count' => $failedCount,
-                    'failures' => $failedRows, // Sertakan detail data yang gagal
+                    'failures' => $failedRows,
                 ]
             ], 200);
 
