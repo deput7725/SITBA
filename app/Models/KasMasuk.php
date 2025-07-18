@@ -9,10 +9,11 @@ class KasMasuk extends Model
 {
     use HasFactory;
 
-    protected $table = 'kas_masuk';
+    protected $table = 'pendaftaran_zakat';
 
     protected $fillable = [
-        'NO',
+        'jumlah_transaksi',
+        'no_transaksi',
         'tgl_transaksi',
         'npwz',
         'nama',

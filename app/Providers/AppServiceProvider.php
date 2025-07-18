@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Carbon\Carbon; // <-- TAMBAHKAN BARIS INI
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -19,6 +20,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        // --- TAMBAHKAN BARIS DI BAWAH INI ---
+        // Mengatur bahasa default untuk semua format tanggal Carbon
+        Carbon::setLocale('id');
     }
 }

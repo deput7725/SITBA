@@ -18,9 +18,9 @@ return new class extends Migration
             $table->date('tanggal_registrasi')->nullable();
             $table->string('nama', 100);
             $table->string('npwp', 100)->nullable();
-            // NIK akan menjadi kunci utama untuk relasi dan harus unik
             $table->string('nik', 30)->unique()->nullable();
             $table->string('nip', 30)->nullable();
+            $table->string('npwz', 100)->nullable();
             $table->date('tanggal_lahir')->nullable();
             $table->string('tempat_lahir', 100)->nullable();
             $table->enum('jenis_kelamin', ['Laki-laki', 'Perempuan']);
@@ -33,12 +33,14 @@ return new class extends Migration
             $table->string('email', 100)->nullable();
             $table->string('upz', 100)->nullable();
             $table->bigInteger('zakat')->default(0);
-            $table->text('catatan')->nullable();
-            
-            // Kolom untuk relasi ke tabel lembaga
             $table->string('id_lembaga', 10)->nullable();
             $table->foreign('id_lembaga')->references('id_lb')->on('lembaga')->onDelete('set null');
-            
+            $table->date('tgl_transaksi') ->nullable();
+            $table->bigInteger('zakat_fitrah')->default(0);
+            $table->bigInteger('infak')->default(0);
+            $table->text('catatan')->nullable();
+            $table->text('no_transaksi')->nullable();
+            $table->text('jumlah_transaksi')->nullable();
             $table->timestamps();
         });
     }

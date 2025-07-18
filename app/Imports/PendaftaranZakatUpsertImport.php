@@ -63,7 +63,7 @@ class PendaftaranZakatUpsertImport implements ToCollection, WithHeadingRow
                 'upz'                  => $row['upz'] ?? null,
                 'zakat'                => $row['zakat'] ?? 0,
                 'catatan'              => $row['catatan'] ?? null,
-                'id_lembaga'           => $this->idLembaga,
+                'id_lembaga'           => $this->idLembaga, 
             ];
 
             // Logika Update atau Create berdasarkan NIK tidak berubah

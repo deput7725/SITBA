@@ -15,7 +15,6 @@ return new class extends Migration
         Schema::create('lembaga', function (Blueprint $table) {
             $table->string('id_lb', 10)->primary();
             $table->string('nama', 255);
-            $table->timestamps();
         });
     }
 

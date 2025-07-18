@@ -11,7 +11,8 @@ use PhpOffice\PhpSpreadsheet\Shared\Date;
 
 class KasMasukImport implements ToCollection, WithHeadingRow
 {
-    private $successRows = 0;
+    // Properti untuk menyimpan statistik hasil proses
+    private $updatedCount = 0;
     private $failedRows = [];
 
     /**
@@ -19,21 +20,13 @@ class KasMasukImport implements ToCollection, WithHeadingRow
      */
     public function collection(Collection $rows)
     {
-        $dataToInsert = [];
-
         foreach ($rows as $rowIndex => $row) {
-            // --- INI BAGIAN UTAMA YANG DIPERBARUI ---
-            // Kita tambahkan aturan validasi untuk NIK
+            // 1. Validasi data dari baris. NIK wajib ada.
             $validator = Validator::make($row->toArray(), [
-                'npwz' => 'required|string|max:100',
-                'nama' => 'required|string|max:100',
+                'nik' => 'required|string',
                 'tgl_transaksi' => 'required',
-                // Aturan baru: NIK wajib ada, harus string, panjangnya 16 digit,
-                // dan NIK tersebut harus sudah terdaftar di tabel pendaftaran_zakat.
-                'nik' => 'required|string|exists:pendaftaran_zakat,nik',
-                'zakat' => 'nullable|numeric',
-                'zakat_fitrah' => 'nullable|numeric',
-                'infak' => 'nullable|numeric',
+                'nama' => 'required|string|max:100',
+                'npwz' => 'required|string|max:100',
             ]);
 
             if ($validator->fails()) {
@@ -45,36 +38,66 @@ class KasMasukImport implements ToCollection, WithHeadingRow
                 continue;
             }
 
-            // Tambahkan NIK saat menyiapkan data untuk dimasukkan ke database
-            $dataToInsert[] = [
-                'NO'            => $row['no'] ?? null,
-                'tgl_transaksi' => Date::excelToDateTimeObject($row['tgl_transaksi'])->format('Y-m-d'),
-                'npwz'          => $row['npwz'],
-                'nik'           => $row['nik'], // <-- NIK sekarang disertakan
-                'nama'          => $row['nama'],
-                'zakat'         => $row['zakat'] ?? 0,
-                'zakat_fitrah'  => $row['zakat_fitrah'] ?? 0,
-                'infak'         => $row['infak'] ?? 0,
-                'keterangan'    => $row['keterangan'] ?? null,
-                'created_at'    => now(),
-                'updated_at'    => now(),
-            ];
-        }
+            // 2. Cari record kas masuk berdasarkan NIK.
+            // Jika ada beberapa transaksi dengan NIK yang sama, ini akan mengambil yang pertama.
+            // Pertimbangkan untuk mencari berdasarkan NIK dan Tanggal jika itu lebih unik.
+            $kasMasuk = KasMasuk::where('nik', $row['nik'])
+                                ->first();
 
-        if (!empty($dataToInsert)) {
-            KasMasuk::insert($dataToInsert);
-            $this->successRows = count($dataToInsert);
+            // 3. Jika record ditemukan, lakukan UPDATE.
+            if ($kasMasuk) {
+                $newTransactionNumber = $this->generateUniqueTransactionNumber();
+                $jumlahTransaksi = $kasMasuk->jumlah_transaksi ?? 0;
+                
+                $newJumlahTransaksi = $jumlahTransaksi + 1;
+                $kasMasuk->update([
+                    'jumlah_transaksi' => $newJumlahTransaksi,
+                    'no_transaksi'  => $newTransactionNumber, 
+                    'tgl_transaksi' => isset($row['tgl_transaksi']) ? Date::excelToDateTimeObject($row['tgl_transaksi'])->format('Y-m-d') : $kasMasuk->tgl_transaksi,
+                    'npwz'          => $row['npwz'],
+                    'nama'          => $row['nama'],
+                    'zakat'         => $row['zakat'] ?? $kasMasuk->zakat,
+                    'zakat_fitrah'  => $row['zakat_fitrah'] ?? $kasMasuk->zakat_fitrah,
+                    'infak'         => $row['infak'] ?? $kasMasuk->infak,
+                    'catatan'    => $row['keterangan'] ?? $kasMasuk->keterangan,
+                ]);
+                $this->updatedCount++;
+            
+            // 4. Jika tidak ditemukan, catat sebagai GAGAL.
+            } else {
+                $this->failedRows[] = [
+                    'row_number' => $rowIndex + 2,
+                    'data' => $row,
+                    'errors' => ['Data kas masuk dengan NIK ini tidak ditemukan di database.'],
+                ];
+            }
         }
     }
 
-    // Method getSuccessCount() dan getFailedRows() tidak perlu diubah
-    public function getSuccessCount(): int
+    private function generateUniqueTransactionNumber(): int
     {
-        return $this->successRows;
+        do {
+            // Buat nomor acak antara 100000 dan 999999
+            $number = mt_rand(100000, 999999);
+            
+            // Cek apakah nomor ini sudah ada di database
+            $exists = KasMasuk::where('no_transaksi', $number)->exists();
+
+        // Ulangi proses jika nomor sudah ada (exists == true)
+        } while ($exists);
+
+        return $number;
     }
 
-    public function getFailedRows(): array
+    /**
+     * Method untuk mengambil hasil statistik dari proses import.
+     */
+    public function getStats(): array
     {
-        return $this->failedRows;
+        return [
+            'updated' => $this->updatedCount,
+            'failed' => count($this->failedRows),
+            'failures' => $this->failedRows,
+        ];
     }
 }

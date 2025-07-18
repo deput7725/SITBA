@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Validator;
 use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpWord\TemplateProcessor;
 use PhpOffice\PhpWord\IOFactory;
-use Terbilang;
+use NumberToWords\NumberToWords;
 use App\Imports\KasMasukImport;
 use Maatwebsite\Excel\Facades\Excel;
 
@@ -86,33 +86,21 @@ class KasMasukController extends Controller
 
         try {
             $file = $request->file('file');
-
-            // Baris ini sekarang akan berfungsi karena class KasMasukImport sudah ditemukan
             $import = new KasMasukImport();
-            
             Excel::import($import, $file);
 
-            $successCount = $import->getSuccessCount();
-            $failedRows = $import->getFailedRows();
-            $failedCount = count($failedRows);
-
-            $message = "Proses impor selesai. {$successCount} data berhasil diimpor";
-            if ($failedCount > 0) {
-                $message .= " dan {$failedCount} data gagal.";
-            } else {
-                $message .= ".";
-            }
+            $stats = $import->getStats();
 
             return response()->json([
-                'message' => $message,
+                'message' => 'Proses update massal selesai.',
                 'data' => [
-                    'success_count' => $successCount,
-                    'failed_count' => $failedCount,
-                    'failures' => $failedRows,
+                    'records_updated' => $stats['updated'],
+                    'records_failed_or_skipped' => $stats['failed'],
+                    'failures' => $stats['failures'],
                 ]
             ], 200);
 
-        } catch (Exception $e) {
+        } catch (\Exception $e) {
             return response()->json([
                 'message' => 'Terjadi kesalahan fatal saat memproses file.',
                 'error' => $e->getMessage()
@@ -152,7 +140,7 @@ class KasMasukController extends Controller
     {
         $validator = Validator::make($request->all(), [
             'ids' => 'required|array|min:1',
-            'ids.*' => 'integer|exists:kas_masuk,id',
+            'ids.*' => 'integer|exists:pendaftaran_zakat,id',
         ]);
 
         if ($validator->fails()) { return response()->json(['errors' => $validator->errors()], 422); }
@@ -174,11 +162,6 @@ class KasMasukController extends Controller
                 // Panggil helper method yang sudah dioptimalkan
                 $html = $this->getHtmlFromProcessor($templateProcessor);
                 $finalHtml .= $html;
-
-                // Tambahkan pemisah halaman, kecuali untuk halaman terakhir
-                if ($index < $kasMasukRecords->count() - 1) {
-                    $finalHtml .= '<div style="page-break-after: always;"></div>';
-                }
             }
 
             $pdf = Pdf::loadHTML($finalHtml);
@@ -194,17 +177,28 @@ class KasMasukController extends Controller
      */
     private function fillTemplate(TemplateProcessor $templateProcessor, KasMasuk $kasMasuk, $total)
     {
-        $templateProcessor->setValue('nama_penyetor', $kasMasuk->pendaftaran->nama ?? $kasMasuk->nama);
+         // 1. Buat instance dari pustaka NumberToWords.
+        $numberToWords = new NumberToWords();
+
+        // 2. Dapatkan "transformer" khusus untuk Bahasa Indonesia.
+        $numberTransformer = $numberToWords->getNumberTransformer('id');
+
+        // 3. Konversi angka ke dalam kata-kata Bahasa Indonesia.
+        $terbilangIndonesia = $numberTransformer->toWords($total);
+        
+        $templateProcessor->setValue('nama_penyetor', $kasMasuk->nama);
         $templateProcessor->setValue('npwz', $kasMasuk->npwz);
-        $templateProcessor->setValue('nik', $kasMasuk->pendaftaran->nik ?? '-');
-        $templateProcessor->setValue('alamat', $kasMasuk->pendaftaran->alamat_rumah ?? '-');
-        $templateProcessor->setValue('kontak', ($kasMasuk->pendaftaran->handphone ?? '-') . ' / ' . ($kasMasuk->pendaftaran->email ?? '-'));
-        $templateProcessor->setValue('nomor_bukti', $kasMasuk->NO ? str_pad($kasMasuk->NO, 8, '0', STR_PAD_LEFT) : 'N/A');
+        $templateProcessor->setValue('nik', $kasMasuk->nik ?? '-');
+        $templateProcessor->setValue('alamat', $kasMasuk->alamat_rumah ?? '-');
+        $templateProcessor->setValue('kontak', ($kasMasuk->handphone ?? '-') . ' / ' . ($kasMasuk->email ?? '-'));
+        $templateProcessor->setValue('nomor_bukti', $kasMasuk->no_transaksi ? str_pad($kasMasuk->no_transaksi, 6, '0', STR_PAD_LEFT) : 'N/A');
         $templateProcessor->setValue('periode', \Carbon\Carbon::parse($kasMasuk->tgl_transaksi)->isoFormat('MMMM YYYY'));
-        $templateProcessor->setValue('tanggal_transaksi', \Carbon\Carbon::parse($kasMasuk->tgl_transaksi)->isoFormat('DD/MM/YYYY'));
         $templateProcessor->setValue('jumlah', number_format($total, 0, ',', '.'));
-        $templateProcessor->setValue('terbilang', ucwords(Terbilang::make($total)) . ' Rupiah');
-        $templateProcessor->setValue('catatan_transaksi', $kasMasuk->keterangan ?? 'Tidak ada catatan.');
+        $templateProcessor->setValue('terbilang', ucwords($terbilangIndonesia) . ' Rupiah');
+        $templateProcessor->setValue('catatan_transaksi', $kasMasuk->catatan ?? 'Tidak ada catatan.');
+        $templateProcessor->setValue('NO',''.(\Carbon\Carbon::parse($kasMasuk->tgl_transaksi)->isoFormat('DD/MM/YYYY')).' / '.'km'.' / '.($kasMasuk->jumlah_transaksi ?? '-').' / '.($kasMasuk->no_transaksi ? str_pad($kasMasuk->no_transaksi, 6, '0', STR_PAD_LEFT) : 'N/A'));
+        $templateProcessor->setValue('tanggal_transaksi', \Carbon\Carbon::parse($kasMasuk->tgl_transaksi)->isoFormat('DD/MM/YYYY'));
+        $templateProcessor->setValue('jumlah_ts', $kasMasuk->jumlah_transaksi ?? '-');
     }
 
     /**
@@ -226,7 +220,7 @@ class KasMasukController extends Controller
         // Buat CSS untuk "memadatkan" layout
         $compactCss = "
             <style>
-                body { font-family: 'Times New Roman', serif; font-size: 10.5pt; }
+                body { font-family: Courier New, serif; font-size: 20.5pt; }
                 p { margin: 0; padding: 0; line-height: 1.2; }
                 table { border-collapse: collapse; width: 100%; page-break-inside: avoid; }
                 td { padding: 1px 2px !important; }
