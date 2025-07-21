@@ -119,6 +119,45 @@ class PendaftaranZakatController extends Controller
         $pendaftaranZakat->delete();
         return response()->json(null, 204);
     }
+    public function batchDelete(Request $request)
+    {
+        // 1. Validasi input
+        $validator = Validator::make($request->all(), [
+            'ids'   => 'required|array',
+            'ids.*' => 'integer|exists:pendaftaran_zakat,id' // Memastikan setiap ID adalah integer dan ada di database
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json([
+                'message' => 'Data yang diberikan tidak valid.',
+                'errors' => $validator->errors()
+            ], 422);
+        }
+
+        DB::beginTransaction();
+        try {
+            $idsToDelete = $request->input('ids');
+            
+            // 2. Eksekusi penghapusan data
+            $deletedCount = PendaftaranZakat::whereIn('id', $idsToDelete)->delete();
+
+            DB::commit();
+
+            // 3. Kirim respon sukses
+            return response()->json([
+                'message' => $deletedCount . ' data berhasil dihapus.'
+            ], 200);
+
+        } catch (Exception $e) {
+            DB::rollBack();
+            // 4. Kirim respon jika terjadi error
+            return response()->json([
+                'message' => 'Terjadi kesalahan pada server saat menghapus data.',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
 
     // --- FUNGSI IMPORT ---
     public function importPerorangan(Request $request)

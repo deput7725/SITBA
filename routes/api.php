@@ -11,22 +11,24 @@ Route::apiResource('lembaga', LembagaController::class)->parameters([
 ]);
 
 // --- Rute untuk mengelola Kas Masuk ---
+// Definisikan route spesifik untuk Kas Masuk terlebih dahulu
+Route::post('kas-masuk/import', [KasMasukController::class, 'import']);
+Route::get('kas-masuk/{kasMasuk}/cetak-bukti-pdf-from-word', [KasMasukController::class, 'cetakBuktiPdfFromWord']);
+Route::post('kas-masuk/cetak-bukti-pdf-batch-from-word', [KasMasukController::class, 'cetakBuktiPdfBatchFromWord']);
+
+// Baru definisikan apiResource untuk Kas Masuk
 Route::apiResource('kas-masuk', KasMasukController::class)
     ->parameters(['kas-masuk' => 'kasMasuk']);
 
-// --- Rute untuk mengelola Pendaftaran Zakat ---
-Route::apiResource('pendaftaran-zakat', PendaftaranZakatController::class);
-
-// --- Rute spesifik untuk import data massal ---
+// Rute spesifik untuk import data massal
 Route::post('pendaftaran-zakat/import/perorangan', [PendaftaranZakatController::class, 'importPerorangan']);
 Route::post('pendaftaran-zakat/import/lembaga/{id_lb}', [PendaftaranZakatController::class, 'importLembaga']);
 
-// --- RUTE BARU UNTUK UPDATE MASSAL ---
+// Rute untuk update massal
 Route::post('pendaftaran-zakat/update-from-file', [PendaftaranZakatController::class, 'updateFromFile']);
 
-// --- RUTE BARU UNTUK IMPORT KAS MASUK ---
-Route::post('kas-masuk/import', [KasMasukController::class, 'import']);
-// Rute untuk mencetak SATU bukti setor
-Route::get('kas-masuk/{kasMasuk}/cetak-bukti-pdf-from-word', [KasMasukController::class, 'cetakBuktiPdfFromWord']);
-// Rute untuk mencetak BANYAK bukti setor (batch)
-Route::post('kas-masuk/cetak-bukti-pdf-batch-from-word', [KasMasukController::class, 'cetakBuktiPdfBatchFromWord']);
+// Rute untuk hapus data massal
+Route::delete('pendaftaran-zakat/batch-delete', [PendaftaranZakatController::class, 'batchDelete'])->name('pendaftaran.hapus.batch');
+
+// Setelah semua route spesifik didefinisikan, baru panggil apiResource
+Route::apiResource('pendaftaran-zakat', PendaftaranZakatController::class);

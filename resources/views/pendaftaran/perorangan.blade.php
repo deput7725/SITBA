@@ -69,28 +69,48 @@
         border-bottom: 1px solid rgba(0,0,0,0.1);
         padding-bottom: 10px;
     }
+    /* Tombol Aksi Umum */
     .btn-action {
         background: var(--button-bg);
         color: white;
         border: none;
         padding: 0.5rem 1rem;
-        margin-top: 10px; /* Jarak antar tombol */
     }
     .btn-action:hover {
         background: var(--button-hover);
         color: white;
     }
+    /* Alert untuk hasil upload */
     .alert { 
-        white-space: pre-wrap; /* Agar format JSON rapi */
+        white-space: pre-wrap;
         word-break: break-all;
     }
-    .btn-primary{
+    /* Override tombol Bootstrap jika perlu */
+    .btn-primary, .btn-success {
         background: var(--button-bg);
         border: none;
     }
-    .btn-success{
-        background: var(--button-bg);
-        border: none;
+    /* Tombol Hapus */
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+        color: white;
+    }
+    .btn-danger:hover {
+        background-color: #c82333;
+        border-color: #bd2130;
+    }
+    /* Tombol Info untuk Unduh */
+    .btn-info {
+        background-color: #0dcaf0;
+        border-color: #0dcaf0;
+        color: white;
+    }
+    .btn-info:hover {
+        background-color: #0b95b0;
+    }
+    .table .no-wrap {
+        white-space: nowrap;
     }
 </style>
 @endpush
@@ -105,10 +125,11 @@
     </div>
 
     <div class="action-box">
+        <!-- Baris untuk Filter, Pencarian, dan Aksi Massal -->
         <div class="row g-3 mb-4 align-items-end">
             <div class="col-md-8">
                 <form action="{{ route('pendaftaran.perorangan') }}" method="GET">
-                    <label for="search" class="form-label">Cari Pendaftar</label>
+                    <label for="search" class="form-label fw-bold">Cari Pendaftar</label>
                     <div class="input-group">
                         <input type="text" class="form-control" id="search" name="search" placeholder="Cari berdasarkan Nama, NIK, Pekerjaan..." value="{{ request('search') }}">
                         <button class="btn btn-primary" type="submit"><i class="bi bi-search"></i> Cari</button>
@@ -116,16 +137,22 @@
                     </div>
                 </form>
             </div>
-            <div class="col-md-4 text-end">
-                <label class="form-label fw-bold d-block">&nbsp;</label> {{-- Label kosong untuk alignment --}}
-                <button id="btnPrintSelected" class="btn btn-action w-100" disabled>
-                    <i class="bi bi-printer-fill"></i> Cetak Terpilih (<span id="selectedCount">0</span>)
-                </button>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Aksi Massal</label>
+                <div class="btn-group w-100" role="group">
+                    <button id="btnPrintSelected" class="btn btn-action" disabled>
+                       <i class="bi bi-printer-fill"></i> Cetak (<span id="selectedCountPrint">0</span>)
+                   </button>
+                   <button id="btnDeleteSelected" class="btn btn-danger" disabled>
+                       <i class="bi bi-trash-fill"></i> Hapus (<span id="selectedCountDelete">0</span>)
+                   </button>
+                </div>
             </div>
         </div>
 
         <hr>
 
+        <!-- Baris untuk Unduh & Unggah -->
         <div class="row g-3 mt-3">
             <div class="col-md-4">
                 <h5 class="mb-3">1. Unduh Template</h5>
@@ -135,12 +162,12 @@
 
             <div class="col-md-8">
                  <h5 class="mb-3">2. Unggah Data dari File</h5>
-                <form id="form-upload-data">
+                <form id="form-upload-data" onsubmit="return false;">
                     <div class="mb-3">
                         <select class="form-select" id="upload_type" name="upload_type" required>
-                            <option value="" disabled selected>-- Pilih jenis data yang akan diunggah --</option>
-                            <option value="pendaftaran">Data Pendaftaran (Perorangan)</option>
-                            <option value="kasmasuk">Data Kas Masuk</option>
+                            <option value="" disabled selected>-- Pilih jenis data --</option>
+                            <option value="pendaftaran">Pendaftaran (Perorangan)</option>
+                            <option value="kasmasuk">Kas Masuk</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -152,36 +179,74 @@
                 </form>
             </div>
         </div>
-
         <div id="upload-result" class="alert mt-4" role="alert" style="display: none;"></div>
     </div>
+    
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
                     <th class="checkbox-col"><input class="form-check-input" type="checkbox" id="selectAllCheckbox"></th>
-                    <th>No</th>
-                    <th>Nama</th>
-                    <th>NIK</th>
-                    <th>Pekerjaan</th>
-                    <th>Email</th>
+                    <th class="no-wrap">No</th>
+                    <th class="no-wrap">Nama</th>
+                    <th class="no-wrap">NIK</th>
+                    <th class="no-wrap">NIP</th>
+                    <th class="no-wrap">NPWP</th>
+                    <th class="no-wrap">NPWZ</th>
+                    <th class="no-wrap">Handphone</th>
+                    <th class="no-wrap">Email</th>
+                    <th class="no-wrap">Telepon</th>
+                    <th class="no-wrap">Tgl Lahir</th>
+                    <th class="no-wrap">Tempat Lahir</th>
+                    <th class="no-wrap">Gender</th>
+                    <th class="no-wrap">Alamat Rumah</th>
+                    <th class="no-wrap">Alamat Korespondensi</th>
+                    <th class="no-wrap">Pekerjaan</th>
+                    <th class="no-wrap">Alamat Kantor</th>
+                    <th class="no-wrap">UPZ</th>
+                    <th class="no-wrap">No Transaksi</th>
+                    <th class="no-wrap">Zakat</th>
+                    <th class="no-wrap">Infak</th>
+                    <th class="no-wrap">Zakat Fitrah</th>
+                    <th class="no-wrap">Jml Transaksi</th>
+                    <th class="no-wrap">Tgl Transaksi</th>
+                    <th class="no-wrap">Tgl Registrasi</th>
+                    <th class="no-wrap">Catatan</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse ($pendaftar as $index => $p)
                     <tr>
-                        <td class="checkbox-col">
-                            <input class="form-check-input row-checkbox" type="checkbox" value="{{ $p->id }}">
-                        </td>
-                        <td>{{ $pendaftar->firstItem() + $index }}</td>
-                        <td>{{ $p->nama }}</td>
-                        <td>{{ $p->nik }}</td>
-                        <td>{{ $p->pekerjaan ?? '-' }}</td>
-                        <td>{{ $p->email ?? '-' }}</td>
+                        <td class="checkbox-col"><input class="form-check-input row-checkbox" type="checkbox" value="{{ $p->id }}"></td>
+                        <th class="no-wrap">{{ $pendaftar->firstItem() + $index }}</td>
+                        <th class="no-wrap">{{ $p->nama }}</td>
+                        <th class="no-wrap">{{ $p->nik }}</td>
+                        <th class="no-wrap">{{ $p->nip ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->npwp ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->npwz ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->handphone ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->email ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->telepon ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->tanggal_lahir ? \Carbon\Carbon::parse($p->tanggal_lahir)->format('d-m-Y') : '-' }}</td>
+                        <th class="no-wrap">{{ $p->tempat_lahir ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->jenis_kelamin ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->alamat_rumah ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->alamat_korespondensi ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->pekerjaan ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->alamat_kantor ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->upz ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->no_transaksi ?? '-' }}</td>
+                        <th class="no-wrap">{{ $p->zakat ? 'Rp ' . number_format($p->zakat, 0, ',', '.') : '-' }}</td>
+                        <th class="no-wrap">{{ $p->infak ? 'Rp ' . number_format($p->infak, 0, ',', '.') : '-' }}</td>
+                        <th class="no-wrap">{{ $p->zakat_fitrah ? 'Rp ' . number_format($p->zakat_fitrah, 0, ',', '.') : '-' }}</td>
+                        <th class="no-wrap">{{ $p->jumlah_transaksi ? number_format($p->jumlah_transaksi, 0, ',', '.').' Kali' : '-' }}</td>
+                        <th class="no-wrap">{{ $p->tgl_transaksi ? \Carbon\Carbon::parse($p->tgl_transaksi)->format('d-m-Y') : '-' }}</td>
+                        <th class="no-wrap">{{ $p->tanggal_registrasi ? \Carbon\Carbon::parse($p->tanggal_registrasi)->format('d-m-Y') : '-' }}</td>
+                        <th class="no-wrap">{{ $p->catatan ?? '-' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="text-center p-4">Tidak ada data yang ditemukan.</td>
+                        <td colspan="26" class="text-center p-4">Tidak ada data yang ditemukan.</td>
                     </tr>
                 @endempty
             </tbody>
@@ -199,160 +264,169 @@
 document.addEventListener('DOMContentLoaded', function () {
     const uploadForm = document.getElementById('form-upload-data');
     const resultDiv = document.getElementById('upload-result');
+    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
+    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+    const printButton = document.getElementById('btnPrintSelected');
+    const deleteButton = document.getElementById('btnDeleteSelected');
+    const selectedCountPrintSpan = document.getElementById('selectedCountPrint');
+    const selectedCountDeleteSpan = document.getElementById('selectedCountDelete');
 
-    // --- FUNGSI UPLOAD TERPADU ---
+    // --- FUNGSI UPLOAD ---
     async function handleUpload(form, url) {
         const formData = new FormData(form);
-        const fileInput = form.querySelector('input[type="file"]');
         const submitButton = form.querySelector('button[type="submit"]');
         
         resultDiv.style.display = 'none';
         submitButton.disabled = true;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Mengunggah...';
+        submitButton.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Mengunggah...`;
 
         try {
             const response = await fetch(url, {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'Accept': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
+                headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             });
-
             const result = await response.json();
             
-            // Format pesan agar lebih mudah dibaca
             let message = '';
             if (response.ok) {
                 resultDiv.className = 'alert alert-success';
                 message = `✅ **Sukses:**\n${result.message || JSON.stringify(result, null, 2)}`;
-                // Refresh halaman setelah 3 detik jika sukses untuk menampilkan data baru
                 setTimeout(() => window.location.reload(), 3000);
             } else {
                 resultDiv.className = 'alert alert-danger';
-                message = `❌ **Error (Status: ${response.status}):**\n${result.message || 'Terjadi kesalahan pada server.'}`;
-                if (result.errors) {
-                    message += `\n\n**Detail Validasi:**\n${JSON.stringify(result.errors, null, 2)}`;
-                }
-                if (result.failures) {
-                     message += `\n\n**Detail Kegagalan Impor:**\n${JSON.stringify(result.failures, null, 2)}`;
-                }
+                message = `❌ **Error (Status: ${response.status}):**\n${result.message || 'Terjadi kesalahan.'}`;
+                if (result.errors) message += `\n\n**Detail:**\n${JSON.stringify(result.errors, null, 2)}`;
+                if (result.failures) message += `\n\n**Kegagalan:**\n${JSON.stringify(result.failures, null, 2)}`;
             }
             resultDiv.textContent = message;
-
         } catch (error) {
             resultDiv.className = 'alert alert-danger';
-            resultDiv.textContent = `❌ **Error Jaringan:**\nTerjadi masalah saat mencoba menghubungi server. ${error.message}`;
+            resultDiv.textContent = `❌ **Error Jaringan:**\n${error.message}`;
         } finally {
             resultDiv.style.display = 'block';
             submitButton.disabled = false;
             submitButton.innerHTML = '<i class="bi bi-upload"></i> Unggah';
-            // Tidak mereset input file agar pengguna bisa lihat file apa yang diunggah jika terjadi error
         }
     }
 
-    // Event listener untuk form unggah terpadu
-    uploadForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const uploadType = document.getElementById('upload_type').value;
-        const fileInput = document.getElementById('file_upload');
-        let targetUrl = '';
+    if(uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const uploadType = document.getElementById('upload_type').value;
+            const fileInput = document.getElementById('file_upload');
+            if (!uploadType) return alert('Silakan pilih jenis data yang akan diunggah.');
+            if (fileInput.files.length === 0) return alert('Silakan pilih file untuk diunggah.');
 
-        if (!uploadType) {
-            alert('Silakan pilih jenis data yang akan diunggah.');
-            return;
-        }
-        if (fileInput.files.length === 0) {
-            alert('Silakan pilih file untuk diunggah.');
-            return;
-        }
+            let targetUrl = '';
+            if (uploadType === 'pendaftaran') {
+                targetUrl = "{{ url('/api/pendaftaran-zakat/import/perorangan') }}";
+            } else if (uploadType === 'kasmasuk') {
+                targetUrl = "{{ url('/api/kas-masuk/import') }}";
+            }
+            handleUpload(uploadForm, targetUrl);
+        });
+    }
 
-        if (uploadType === 'pendaftaran') {
-            targetUrl = "{{ url('/api/pendaftaran-zakat/import/perorangan') }}";
-        } else if (uploadType === 'kasmasuk') {
-            targetUrl = "{{ url('/api/kas-masuk/import') }}";
-        }
-        
-        handleUpload(uploadForm, targetUrl);
-    });
-
-    // --- FUNGSI CETAK DATA TERPILIH (Tidak ada perubahan, sudah baik) ---
-    const selectAllCheckbox = document.getElementById('selectAllCheckbox');
-    const rowCheckboxes = document.querySelectorAll('.row-checkbox');
-    const printButton = document.getElementById('btnPrintSelected');
-    const selectedCountSpan = document.getElementById('selectedCount');
-
+    // --- Logika Aksi Massal (Cetak & Hapus) ---
     function getSelectedIds() {
         return Array.from(rowCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
     }
 
-    function updatePrintButtonState() {
+    function updateActionButtonsState() {
         const selectedIds = getSelectedIds();
-        selectedCountSpan.textContent = selectedIds.length;
-        printButton.disabled = selectedIds.length === 0;
+        const count = selectedIds.length;
+        const areAnySelected = count > 0;
+
+        if(selectedCountPrintSpan) selectedCountPrintSpan.textContent = count;
+        if(selectedCountDeleteSpan) selectedCountDeleteSpan.textContent = count;
+        
+        if(printButton) printButton.disabled = !areAnySelected;
+        if(deleteButton) deleteButton.disabled = !areAnySelected;
     }
 
-    selectAllCheckbox.addEventListener('change', function () {
-        rowCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
-        updatePrintButtonState();
-    });
+    if(selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('change', function () {
+            rowCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
+            updateActionButtonsState();
+        });
+    }
 
     rowCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function () {
-            if (!this.checked) {
-                selectAllCheckbox.checked = false;
-            } else {
-                // Jika semua checkbox baris tercentang, centang juga 'Select All'
-                if (getSelectedIds().length === rowCheckboxes.length) {
-                    selectAllCheckbox.checked = true;
-                }
-            }
-            updatePrintButtonState();
+            selectAllCheckbox.checked = getSelectedIds().length === rowCheckboxes.length;
+            updateActionButtonsState();
         });
     });
 
-    printButton.addEventListener('click', async function () {
-        const ids = getSelectedIds();
-        if (ids.length === 0) return;
-
-        this.disabled = true;
-        this.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Memproses...`;
-
-        try {
-            const response = await fetch("{{ route('pendaftaran.cetak.batch') }}", {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Accept': 'application/pdf', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                body: JSON.stringify({ ids: ids })
-            });
-            if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.style.display = 'none'; a.href = url;
-                a.download = 'laporan-pendaftar-terpilih.pdf';
-                document.body.appendChild(a); a.click();
-                window.URL.revokeObjectURL(url);
-                a.remove();
-            } else { 
-                const errorData = await response.json().catch(() => ({ message: 'Gagal membaca respons error dari server.' }));
-                let errorMessage = 'Gagal membuat laporan.\n\n';
-                errorMessage += `Status: ${response.status} ${response.statusText}\n`;
-                if (errorData.message) { errorMessage += `Pesan: ${errorData.message}\n`; }
-                if (errorData.error_detail) { errorMessage += `Detail Teknis: ${errorData.error_detail}`; }
-                alert(errorMessage);
+    if(printButton) {
+        printButton.addEventListener('click', async function () {
+            const ids = getSelectedIds();
+            if (ids.length === 0) return;
+            this.disabled = true;
+            this.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Mencetak...`;
+            try {
+                const response = await fetch("{{ route('pendaftaran.cetak.batch') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/pdf', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ ids: ids })
+                });
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.style.display = 'none'; a.href = url;
+                    a.download = 'laporan-pendaftar-terpilih.pdf';
+                    document.body.appendChild(a); a.click();
+                    window.URL.revokeObjectURL(url); a.remove();
+                } else { 
+                    const errorData = await response.json().catch(() => ({ message: 'Gagal membaca respons error.' }));
+                    alert(`Gagal membuat laporan: ${errorData.message}`);
+                }
+            } catch (error) { 
+                alert('Terjadi kesalahan jaringan saat mencetak.'); 
+            } finally {
+                this.innerHTML = `<i class="bi bi-printer-fill"></i> Cetak (<span id="selectedCountPrint">${getSelectedIds().length}</span>)`;
+                updateActionButtonsState();
             }
-        } catch (error) { 
-            alert('Terjadi kesalahan jaringan saat mencoba mencetak.'); 
-        } finally {
-            // Update teks tombol, bahkan jika ada error
-            const currentSelectedCount = getSelectedIds().length;
-            this.innerHTML = `<i class="bi bi-printer-fill"></i> Cetak Terpilih (${currentSelectedCount})`;
-            updatePrintButtonState(); // Panggil fungsi ini untuk meng-enable/disable tombol dengan benar
-        }
-    });
+        });
+    }
+    
+    if(deleteButton) {
+        deleteButton.addEventListener('click', async function () {
+            const ids = getSelectedIds();
+            if (ids.length === 0) return;
 
-    updatePrintButtonState(); // Inisialisasi saat halaman dimuat
+            const isConfirmed = confirm(`Anda yakin ingin menghapus ${ids.length} data yang dipilih secara permanen? Aksi ini tidak dapat dibatalkan.`);
+            if (!isConfirmed) return;
+
+            this.disabled = true;
+            this.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Menghapus...`;
+
+            try {
+                const response = await fetch("{{ route('pendaftaran.hapus.batch') }}", {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ ids: ids })
+                });
+
+                const result = await response.json();
+                if (response.ok) {
+                    alert(result.message || 'Data berhasil dihapus.');
+                    location.reload();
+                } else {
+                    alert(`Error: ${result.message || 'Terjadi kesalahan saat menghapus data.'}`);
+                }
+            } catch (error) {
+                alert('Error Jaringan: Gagal menghubungi server.');
+            } finally {
+                this.innerHTML = `<i class="bi bi-trash-fill"></i> Hapus (<span id="selectedCountDelete">${getSelectedIds().length}</span>)`;
+                updateActionButtonsState();
+            }
+        });
+    }
+    
+    updateActionButtonsState(); // Inisialisasi awal
 });
 </script>
 @endpush

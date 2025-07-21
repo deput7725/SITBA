@@ -21,12 +21,10 @@ class KasMasukImport implements ToCollection, WithHeadingRow
     public function collection(Collection $rows)
     {
         foreach ($rows as $rowIndex => $row) {
-            // 1. Validasi data dari baris. NIK wajib ada.
             $validator = Validator::make($row->toArray(), [
                 'nik' => 'required|string',
                 'tgl_transaksi' => 'required',
                 'nama' => 'required|string|max:100',
-                'npwz' => 'required|string|max:100',
             ]);
 
             if ($validator->fails()) {
