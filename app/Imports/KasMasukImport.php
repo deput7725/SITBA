@@ -14,6 +14,18 @@ class KasMasukImport implements ToCollection, WithHeadingRow
     // Properti untuk menyimpan statistik hasil proses
     private $updatedCount = 0;
     private $failedRows = [];
+    private $objectZis;
+    private $uraian;
+    private $namaBank;      
+    private $nomorRekening; 
+    
+    public function __construct(string $objectZis, ?string $uraian, string $namaBank, string $nomorRekening)
+    {
+        $this->objectZis = $objectZis;
+        $this->uraian = $uraian;
+        $this->namaBank = $namaBank;          
+        $this->nomorRekening = $nomorRekening;
+    }
 
     /**
      * @param Collection $rows
@@ -54,6 +66,9 @@ class KasMasukImport implements ToCollection, WithHeadingRow
                     'tgl_transaksi' => isset($row['tgl_transaksi']) ? Date::excelToDateTimeObject($row['tgl_transaksi'])->format('Y-m-d') : $kasMasuk->tgl_transaksi,
                     'npwz'          => $row['npwz'],
                     'nama'          => $row['nama'],
+                    'object_zis'    => $this->objectZis,
+                    'uraian'        => $this->uraian,
+                    'via'           => $this->namaBank . ' - ' . $this->nomorRekening,
                     'zakat'         => $row['zakat'] ?? $kasMasuk->zakat,
                     'zakat_fitrah'  => $row['zakat_fitrah'] ?? $kasMasuk->zakat_fitrah,
                     'infak'         => $row['infak'] ?? $kasMasuk->infak,

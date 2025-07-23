@@ -1,9 +1,11 @@
 <?php
 
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\BankController;
+use App\Http\Controllers\Api\UraianController;
 use App\Http\Controllers\Api\LembagaController;
 use App\Http\Controllers\Api\KasMasukController; 
 use App\Http\Controllers\Api\PendaftaranZakatController;
-use Illuminate\Support\Facades\Route;
 
 // --- Rute untuk mengelola Lembaga ---
 Route::apiResource('lembaga', LembagaController::class)->parameters([
@@ -32,3 +34,9 @@ Route::delete('pendaftaran-zakat/batch-delete', [PendaftaranZakatController::cla
 
 // Setelah semua route spesifik didefinisikan, baru panggil apiResource
 Route::apiResource('pendaftaran-zakat', PendaftaranZakatController::class);
+
+Route::get('uraian', [UraianController::class, 'index']);
+Route::post('uraian', [UraianController::class, 'store']);
+Route::delete('uraian/{uraian}', [UraianController::class, 'destroy']);
+
+Route::get('bank', [BankController::class, 'index']);

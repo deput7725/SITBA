@@ -1,110 +1,94 @@
 @extends('layouts.app')
+
 @section('title', 'Selamat Datang - SITBA')
+
 @push('styles')
 <style>
-    /* Override body style agar konten tetap di tengah untuk halaman ini */
-    body {
-      padding: 0 150px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+    /* * BAGIAN LAYOUT UTAMA 
+     */
+    .welcome-container {
+        display: flex; /* Menggunakan Flexbox */
+        align-items: center; /* Posisikan item di tengah (vertikal) */
+        justify-content: center; /* Posisikan item di tengah (horizontal) */
+        width: 100%;
+        min-height: 90vh; /* Tinggi minimal agar konten selalu di tengah layar */
+        padding: 2rem;
     }
+
     .hero-section {
-        display: flex;
-        flex-direction: column; 
-        justify-content: center;
-        align-items: center;  
-        background: var(--container-bg);
-        padding: 40px 60px;
+        width: 100%;
+        max-width: 900px; /* Lebar maksimum konten */
+        padding: 40px 50px;
+        text-align: center;
+        /* Gaya visual seperti background dan shadow tetap di sini */
+        background: var(--container-bg, #ffffff);
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        transition: background 0.3s ease;
     }
-    .hero-section h1 { 
-        color: var(--text-color); 
-        font-size: 36px; 
-        font-weight: 700; 
-        margin-bottom: 10px; 
-    }
-    .section-subtitle { 
-        text-decoration: none; 
-        color: var(--subtitle-color); 
-        font-weight: 600; 
-        font-size: 16px; 
-        transition: color 0.3s; 
-        padding-bottom: 30px; 
-    }
-    .button-grid { 
-        display: grid; 
+
+    /* * LAYOUT UNTUK TOMBOL (BUTTON GRID)
+     */
+    .button-grid {
+        display: grid; /* Menggunakan CSS Grid */
+        gap: 25px; /* Jarak antar tombol */
+        
+        /* Default: 1 kolom untuk layar kecil (mobile) */
         grid-template-columns: 1fr; 
-        gap: 25px; 
-        width: 100%; 
-        max-width: 900px; 
     }
-    @media (min-width: 576px) { 
-        .button-grid { 
+
+    /* Tampilan untuk layar tablet dan lebih besar (lebar min 576px) */
+    @media (min-width: 576px) {
+        .button-grid {
+            /* Ubah menjadi 2 kolom */
             grid-template-columns: repeat(2, 1fr); 
-        } 
+        }
     }
-    @media (min-width: 992px) {
-        .button-grid { 
-            grid-template-columns: repeat(3, 1fr); 
-        } 
-    }
+
+    /* * GAYA KARTU TOMBOL (Tidak mengubah layout, hanya visual)
+     */
     .button-card {
-        background: var(--button-bg); 
-        border-radius: 12px; 
-        padding: 25px; 
-        text-align: center; 
-        text-decoration: none; 
-        color: inherit; 
-        box-shadow: 0 4px 10px rgba(91, 110, 43, 0.3); 
-        transition: background 0.3s ease, transform 0.2s ease; 
+        display: block;
+        background: var(--button-bg, #007bff);
+        border-radius: 12px;
+        padding: 25px;
+        text-decoration: none;
+        color: white;
+        transition: transform 0.2s ease;
     }
-    .button-card:hover { 
-        background: var(--button-hover); 
-        transform: scale(1.03); 
+
+    .button-card:hover {
+        transform: translateY(-5px); /* Efek mengangkat saat disentuh cursor */
     }
-    .button-card .icon { 
-        font-size: 3rem; 
-        margin-bottom: 15px; 
-        line-height: 1; 
-    }
-    .button-card .label { 
-        font-size: 1.25rem; 
-        font-weight: 500; 
-        color: white; 
-    }
-    .button-card p { 
-        font-size: 0.9rem; 
-        color: white; 
-        margin-top: 5px; 
-        margin-bottom: 0; 
-    }
+
+    .button-card .icon { font-size: 3rem; margin-bottom: 15px; }
+    .button-card .label { font-size: 1.25rem; font-weight: 500; }
+    .button-card p { font-size: 0.9rem; opacity: 0.9; margin: 5px 0 0 0; }
+    .hero-section h1 { font-size: 36px; margin-bottom: 10px; color:var(--text-color) }
+    .section-subtitle { font-size: 16px; color: var(--subtitle-color, #6c757d); margin-bottom: 30px; }
 </style>
 @endpush
-@section('content')
-<div class="hero-section">
-    <h1>Sistem Informasi SITBA</h1>
-    <p class="section-subtitle">Sistem Transaksi Informasi BAZNAS</p>
 
-    <div class="button-grid">
-        <a href="{{ route('pendaftaran.perorangan') }}" class="button-card">
-            <div class="icon">👤</div>
-            <div class="label">Perorangan</div>
-            <p>Lihat data pendaftar individu</p>
-        </a>
-        <a href="{{ route('pendaftaran.lembaga') }}" class="button-card">
-            <div class="icon">🏢</div>
-            <div class="label">Lembaga</div>
-            <p>Lihat data pendaftar instansi</p>
-        </a>
-        <a href="#" class="button-card">
-            <div class="icon">🗂️</div>
-            <div class="label">Manajemen Data</div>
-            <p>Unduh template & Unggah file</p>
-        </a>
-    </div>
+
+@section('content')
+{{-- Kontainer utama untuk memusatkan seluruh konten di tengah halaman --}}
+<div class="welcome-container">
+    <section class="hero-section">
+        <h1>Sistem Informasi SITBA</h1>
+        <p class="section-subtitle">Sistem Transaksi Informasi BAZNAS</p>
+
+        {{-- Grid untuk menata tombol secara responsif --}}
+        <div class="button-grid">
+            <a href="{{ route('pendaftaran.perorangan') }}" class="button-card">
+                <div class="icon"><i class="bi bi-people-fill"></i></div>
+                <div class="label">Perorangan</div>
+                <p>Lihat data pendaftar individu</p>
+            </a>
+            <a href="{{ route('pendaftaran.lembaga') }}" class="button-card">
+                <div class="icon"><i class="bi bi-buildings"></i></div>
+                <div class="label">Lembaga</div>
+                <p>Lihat data pendaftar instansi</p>
+            </a>
+        </div>
+    </section>
 </div>
 @endsection

@@ -175,12 +175,49 @@
                 <h5 class="mb-3">2. Unggah Data dari File</h5>
                 <form id="form-upload-data" onsubmit="return false;">
                     <div class="mb-3">
-                        <select class="form-select" id="upload_type" required>
+                        <select class="form-select" id="upload_type" name="upload_type" required>
                             <option value="" selected disabled>-- Pilih jenis data --</option>
                             <option value="pendaftaran_lembaga">Pendaftaran (Lembaga)</option>
                             <option value="kas_masuk">Kas Masuk</option>
                         </select>
                     </div>
+
+                    <div id="kas-masuk-fields" style="display: none;">
+                        <div class="mb-3">
+                            <select class="form-select" id="object_zis" name="object_zis">
+                                <option value="" disabled selected>-- Pilih Object ZIS --</option>
+                                <option value="zakat">Zakat</option>
+                                <option value="infaq">Infaq / Sedekah</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3" id="bank-container" style="display: none;">
+                            <select class="form-select" id="bank_rekening" name="bank_rekening">
+                                <!-- Opsi diisi oleh JavaScript dari API -->
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="uraian-container" style="display: none;">
+                            <div class="input-group">
+                                <select class="form-select" id="uraian_select">
+                                    <!-- Opsi diisi oleh JavaScript dari API -->
+                                </select>
+                                <button class="btn btn-action" type="button" id="btn-add-uraian" title="Tambah Uraian Baru">+</button>
+                                <button class="btn btn-danger" type="button" id="btn-delete-uraian" title="Hapus Uraian Terpilih" disabled>-</button>
+                            </div>
+                            <input type="hidden" id="uraian_final" name="uraian">
+                        </div>
+
+                        <div class="mb-3" id="add-uraian-container" style="display: none;">
+                             <label for="new_uraian_text" class="form-label">Teks Uraian Baru:</label>
+                             <div class="input-group">
+                                <input type="text" id="new_uraian_text" class="form-control" placeholder="Contoh: Zakat Perdagangan...">
+                                <button class="btn btn-success" type="button" id="btn-save-uraian">Simpan</button>
+                                <button class="btn btn-secondary" type="button" id="btn-cancel-add-uraian">Batal</button>
+                             </div>
+                        </div>
+                    </div>
+
                     <div class="mb-3">
                         <div class="input-group">
                             <input class="form-control" type="file" id="file_upload" name="file" required>
@@ -201,7 +238,7 @@
                 <tr>
                     <th class="checkbox-col"><input class="form-check-input" type="checkbox" id="selectAllCheckbox"></th>
                     <th class="no-wrap">No</th>
-                    <th class="no-wrap">Nama</th>
+                    <th class="no-wrap">Nama Pendaftar</th>
                     <th class="no-wrap">NIK</th>
                     <th class="no-wrap">NIP</th>
                     <th class="no-wrap">NPWP</th>
@@ -219,13 +256,14 @@
                     <th class="no-wrap">Nama Lembaga</th>
                     <th class="no-wrap">UPZ</th>
                     <th class="no-wrap">No Transaksi</th>
+                    <th class="no-wrap">Via</th>
                     <th class="no-wrap">Zakat</th>
                     <th class="no-wrap">Infak</th>
                     <th class="no-wrap">Zakat Fitrah</th>
                     <th class="no-wrap">Jml Transaksi</th>
                     <th class="no-wrap">Tgl Transaksi</th>
                     <th class="no-wrap">Tgl Registrasi</th>
-                    <th class="no-wrap">Catatan</th>
+                    <th>Catatan</th>
                 </tr>
             </thead>
             <tbody>
@@ -235,35 +273,36 @@
                             <input class="form-check-input row-checkbox" type="checkbox" value="{{ $p->id }}">
                         </td>
                         <td class="no-wrap">{{ $pendaftar->firstItem() + $index }}</td>
-                        <th class="no-wrap">{{ $p->nama }}</td>
-                        <th class="no-wrap">{{ $p->nik }}</td>
-                        <th class="no-wrap">{{ $p->nip ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->npwp ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->npwz ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->handphone ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->email ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->telepon ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->tanggal_lahir ? \Carbon\Carbon::parse($p->tanggal_lahir)->format('d-m-Y') : '-' }}</td>
-                        <th class="no-wrap">{{ $p->tempat_lahir ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->jenis_kelamin ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->alamat_rumah ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->alamat_korespondensi ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->pekerjaan ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->alamat_kantor ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->lembaga->nama ?? 'N/A' }}</td>
-                        <th class="no-wrap">{{ $p->upz ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->no_transaksi ?? '-' }}</td>
-                        <th class="no-wrap">{{ $p->zakat ? 'Rp ' . number_format($p->zakat, 0, ',', '.') : '-' }}</td>
-                        <th class="no-wrap">{{ $p->infak ? 'Rp ' . number_format($p->infak, 0, ',', '.') : '-' }}</td>
-                        <th class="no-wrap">{{ $p->zakat_fitrah ? 'Rp ' . number_format($p->zakat_fitrah, 0, ',', '.') : '-' }}</td>
-                        <th class="no-wrap">{{ $p->jumlah_transaksi ? number_format($p->jumlah_transaksi, 0, ',', '.').' Kali' : '-' }}</td>
-                        <th class="no-wrap">{{ $p->tgl_transaksi ? \Carbon\Carbon::parse($p->tgl_transaksi)->format('d-m-Y') : '-' }}</td>
-                        <th class="no-wrap">{{ $p->tanggal_registrasi ? \Carbon\Carbon::parse($p->tanggal_registrasi)->format('d-m-Y') : '-' }}</td>
-                        <td class="no-wrap">{{ $p->catatan ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->nama }}</td>
+                        <td class="no-wrap">{{ $p->nik }}</td>
+                        <td class="no-wrap">{{ $p->nip ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->npwp ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->npwz ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->handphone ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->email ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->telepon ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->tanggal_lahir ? \Carbon\Carbon::parse($p->tanggal_lahir)->format('d M Y') : '-' }}</td>
+                        <td class="no-wrap">{{ $p->tempat_lahir ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->jenis_kelamin ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->alamat_rumah ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->alamat_korespondensi ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->pekerjaan ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->alamat_kantor ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->lembaga->nama ?? 'N/A' }}</td>
+                        <td class="no-wrap">{{ $p->upz ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->no_transaksi ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->via ?? '-' }}</td>
+                        <td class="no-wrap">{{ $p->zakat ? 'Rp ' . number_format($p->zakat, 0, ',', '.') : '-' }}</td>
+                        <td class="no-wrap">{{ $p->infak ? 'Rp ' . number_format($p->infak, 0, ',', '.') : '-' }}</td>
+                        <td class="no-wrap">{{ $p->zakat_fitrah ? 'Rp ' . number_format($p->zakat_fitrah, 0, ',', '.') : '-' }}</td>
+                        <td class="no-wrap">{{ $p->jumlah_transaksi ? number_format($p->jumlah_transaksi, 0, ',', '.').' Kali' : '-' }}</td>
+                        <td class="no-wrap">{{ $p->tgl_transaksi ? \Carbon\Carbon::parse($p->tgl_transaksi)->format('d M Y') : '-' }}</td>
+                        <td class="no-wrap">{{ $p->tanggal_registrasi ? \Carbon\Carbon::parse($p->tanggal_registrasi)->format('d M Y') : '-' }}</td>
+                        <td>{{ $p->catatan ?? '-' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="27" class="text-center p-4">Tidak ada data yang ditemukan.</td>
+                        <td colspan="28" class="text-center p-4">Tidak ada data yang ditemukan.</td>
                     </tr>
                 @endempty
             </tbody>
@@ -279,8 +318,23 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    // --- Deklarasi Variabel ---
     const uploadForm = document.getElementById('form-upload-data');
     const resultDiv = document.getElementById('upload-result');
+    const uploadTypeSelect = document.getElementById('upload_type');
+    const kasMasukFields = document.getElementById('kas-masuk-fields');
+    const objectZisSelect = document.getElementById('object_zis');
+    const bankContainer = document.getElementById('bank-container');
+    const bankSelect = document.getElementById('bank_rekening');
+    const uraianContainer = document.getElementById('uraian-container');
+    const uraianSelect = document.getElementById('uraian_select');
+    const uraianFinal = document.getElementById('uraian_final');
+    const btnAddUraian = document.getElementById('btn-add-uraian');
+    const btnDeleteUraian = document.getElementById('btn-delete-uraian');
+    const addUraianContainer = document.getElementById('add-uraian-container');
+    const newUraianText = document.getElementById('new_uraian_text');
+    const btnSaveUraian = document.getElementById('btn-save-uraian');
+    const btnCancelAddUraian = document.getElementById('btn-cancel-add-uraian');
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
     const printButton = document.getElementById('btnPrintSelected');
@@ -288,15 +342,174 @@ document.addEventListener('DOMContentLoaded', function () {
     const selectedCountPrintSpan = document.getElementById('selectedCountPrint');
     const selectedCountDeleteSpan = document.getElementById('selectedCountDelete');
 
-    // --- FUNGSI UPLOAD ---
+    let uraianData = {};
+    let bankData = {};
+
+    // --- LOGIKA UTAMA ---
+
+    async function fetchInitialData() {
+        try {
+            const [uraianResponse, bankResponse] = await Promise.all([
+                fetch("{{ url('/api/uraian') }}"),
+                fetch("{{ url('/api/bank') }}")
+            ]);
+            if (!uraianResponse.ok) throw new Error('Gagal mengambil data uraian');
+            if (!bankResponse.ok) throw new Error('Gagal mengambil data bank');
+            uraianData = await uraianResponse.json();
+            bankData = await bankResponse.json();
+        } catch (error) {
+            console.error(error);
+            alert('Tidak dapat memuat data awal dari server.');
+        }
+    }
+
+    function populateUraianSelect(kategori) {
+        const options = uraianData[kategori] || [];
+        uraianSelect.innerHTML = '';
+        uraianSelect.appendChild(new Option('-- Pilih Uraian --', ''));
+        options.forEach(option => {
+            const optionElement = new Option(option.nama_uraian, option.nama_uraian);
+            optionElement.dataset.id = option.id;
+            uraianSelect.appendChild(optionElement);
+        });
+        uraianFinal.value = '';
+        btnDeleteUraian.disabled = true;
+    }
+
+    function populateBankSelect(kategori) {
+        const options = bankData[kategori] || [];
+        bankSelect.innerHTML = '';
+        bankSelect.appendChild(new Option('-- Pilih Bank Tujuan --', ''));
+        options.forEach(bank => {
+            const displayText = `${bank.nama_bank} - ${bank.nomor_rekening}`;
+            bankSelect.appendChild(new Option(displayText, bank.id));
+        });
+    }
+
+    if (uploadTypeSelect) {
+        uploadTypeSelect.addEventListener('change', function() {
+            const selectedType = this.value;
+            const isKasMasuk = selectedType === 'kas_masuk';
+            kasMasukFields.style.display = isKasMasuk ? 'block' : 'none';
+            objectZisSelect.required = isKasMasuk;
+            bankSelect.required = isKasMasuk;
+            uraianSelect.required = isKasMasuk;
+            
+            objectZisSelect.value = '';
+            bankContainer.style.display = 'none';
+            uraianContainer.style.display = 'none';
+            addUraianContainer.style.display = 'none';
+        });
+    }
+
+    if (objectZisSelect) {
+        objectZisSelect.addEventListener('change', function() {
+            const selectedKategori = this.value;
+            const shouldShow = !!selectedKategori;
+            bankContainer.style.display = shouldShow ? 'block' : 'none';
+            uraianContainer.style.display = shouldShow ? 'block' : 'none';
+            if (shouldShow) {
+                populateBankSelect(selectedKategori);
+                populateUraianSelect(selectedKategori);
+            }
+        });
+    }
+
+    if (uraianSelect) {
+        uraianSelect.addEventListener('change', () => {
+            uraianFinal.value = uraianSelect.value;
+            btnDeleteUraian.disabled = !uraianSelect.value;
+        });
+    }
+
+    if (btnAddUraian) {
+        btnAddUraian.addEventListener('click', () => {
+            uraianContainer.style.display = 'none';
+            addUraianContainer.style.display = 'block';
+            newUraianText.focus();
+        });
+    }
+    if (btnCancelAddUraian) {
+        btnCancelAddUraian.addEventListener('click', () => {
+            addUraianContainer.style.display = 'none';
+            uraianContainer.style.display = 'block';
+            newUraianText.value = '';
+        });
+    }
+
+    if (btnSaveUraian) {
+        btnSaveUraian.addEventListener('click', async () => {
+            const kategori = objectZisSelect.value;
+            const namaUraian = newUraianText.value.trim();
+            if (!kategori || !namaUraian) return alert('Kategori dan teks uraian baru harus diisi.');
+            
+            btnSaveUraian.disabled = true;
+            btnSaveUraian.textContent = 'Menyimpan...';
+            try {
+                const response = await fetch("{{ url('/api/uraian') }}", {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+                    body: JSON.stringify({ kategori: kategori, nama_uraian: namaUraian })
+                });
+                const newUraian = await response.json();
+                if (!response.ok) {
+                    let errorMsg = newUraian.message || 'Gagal menyimpan uraian.';
+                    if(newUraian.errors && newUraian.errors.nama_uraian) errorMsg += `\nDetail: ${newUraian.errors.nama_uraian.join(', ')}`;
+                    throw new Error(errorMsg);
+                }
+                if (!uraianData[kategori]) uraianData[kategori] = [];
+                uraianData[kategori].push(newUraian);
+                populateUraianSelect(kategori);
+                uraianSelect.value = newUraian.nama_uraian;
+                uraianFinal.value = newUraian.nama_uraian;
+                btnDeleteUraian.disabled = false;
+                btnCancelAddUraian.click();
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+            } finally {
+                btnSaveUraian.disabled = false;
+                btnSaveUraian.textContent = 'Simpan';
+            }
+        });
+    }
+
+    if (btnDeleteUraian) {
+        btnDeleteUraian.addEventListener('click', async () => {
+            const selectedOption = uraianSelect.options[uraianSelect.selectedIndex];
+            const uraianId = selectedOption.dataset.id;
+            const uraianText = selectedOption.value;
+            if (!uraianId) return alert('Silakan pilih uraian yang ingin dihapus.');
+            if (!confirm(`Anda yakin ingin menghapus uraian "${uraianText}" secara permanen?`)) return;
+
+            btnDeleteUraian.disabled = true;
+            try {
+                const response = await fetch(`{{ url('/api/uraian') }}/${uraianId}`, {
+                    method: 'DELETE',
+                    headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.message || 'Gagal menghapus data.');
+                
+                const kategori = objectZisSelect.value;
+                uraianData[kategori] = uraianData[kategori].filter(item => item.id != uraianId);
+                populateUraianSelect(kategori);
+                alert(result.message);
+            } catch (error) {
+                alert(`Error: ${error.message}`);
+                btnDeleteUraian.disabled = false;
+            }
+        });
+    }
+
+    fetchInitialData();
+
+    // --- Sisa Logika (Upload, Cetak, Hapus) ---
     async function handleUpload(form, url) {
         const formData = new FormData(form);
         const submitButton = form.querySelector('button[type="submit"]');
-        
         resultDiv.style.display = 'none';
         submitButton.disabled = true;
         submitButton.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Mengunggah...`;
-
         try {
             const response = await fetch(url, {
                 method: 'POST',
@@ -304,7 +517,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 headers: { 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
             });
             const result = await response.json();
-            
             let message = '';
             if (response.ok) {
                 resultDiv.className = 'alert alert-success';
@@ -351,19 +563,15 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // --- Logika Aksi Massal (Cetak & Hapus) ---
     function getSelectedIds() {
         return Array.from(rowCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
     }
 
     function updateActionButtonsState() {
-        const selectedIds = getSelectedIds();
-        const count = selectedIds.length;
+        const count = getSelectedIds().length;
         const areAnySelected = count > 0;
-
         if(selectedCountPrintSpan) selectedCountPrintSpan.textContent = count;
         if(selectedCountDeleteSpan) selectedCountDeleteSpan.textContent = count;
-        
         if(printButton) printButton.disabled = !areAnySelected;
         if(deleteButton) deleteButton.disabled = !areAnySelected;
     }
@@ -419,20 +627,16 @@ document.addEventListener('DOMContentLoaded', function () {
         deleteButton.addEventListener('click', async function () {
             const ids = getSelectedIds();
             if (ids.length === 0) return;
-
             const isConfirmed = confirm(`Anda yakin ingin menghapus ${ids.length} data yang dipilih secara permanen? Aksi ini tidak dapat dibatalkan.`);
             if (!isConfirmed) return;
-
             this.disabled = true;
             this.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Menghapus...`;
-
             try {
                 const response = await fetch("{{ route('pendaftaran.hapus.batch') }}", {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
                     body: JSON.stringify({ ids: ids })
                 });
-
                 const result = await response.json();
                 if (response.ok) {
                     alert(result.message || 'Data berhasil dihapus.');

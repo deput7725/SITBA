@@ -156,7 +156,11 @@ class PendaftaranViewController extends Controller
                 $templateProcessor->setValue('jumlah', number_format($total, 0, ',', '.'));
         $templateProcessor->setValue('terbilang', ucwords($terbilangIndonesia) . ' Rupiah');
         $templateProcessor->setValue('catatan_transaksi', $pendaftar->catatan ?? 'Tidak ada catatan.');
-        $templateProcessor->setValue('jumlah_ts', $pendaftar->jumlah_transaksi ?? '-'); // <-- Mengisi placeholder 'jumlah_ts'
+        $templateProcessor->setValue('jumlah_ts', $pendaftar->jumlah_transaksi ?? '-');
+        $templateProcessor->setValue('object_zis', $pendaftar->object_zis ?? '-');
+        $templateProcessor->setValue('uraian', $pendaftar->uraian ?? '-');
+        $templateProcessor->setValue('via', $pendaftar->via ?? '-');
+        
     }
 
     /**

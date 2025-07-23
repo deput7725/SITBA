@@ -32,6 +32,9 @@ return new class extends Migration
             $table->string('handphone', 20)->nullable();
             $table->string('email', 100)->nullable();
             $table->string('upz', 100)->nullable();
+            $table->string('object_zis', 100)->nullable();
+            $table->string('uraian', 100)->nullable();
+            $table->string('via', 100)->nullable();
             $table->bigInteger('zakat')->default(0);
             $table->string('id_lembaga', 10)->nullable();
             $table->foreign('id_lembaga')->references('id_lb')->on('lembaga')->onDelete('set null');

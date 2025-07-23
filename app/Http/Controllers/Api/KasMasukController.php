@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\KasMasuk;
+use App\Models\Bank;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -15,6 +16,8 @@ use PhpOffice\PhpWord\IOFactory;
 use NumberToWords\NumberToWords;
 use App\Imports\KasMasukImport;
 use Maatwebsite\Excel\Facades\Excel;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class KasMasukController extends Controller
 {
@@ -71,39 +74,70 @@ class KasMasukController extends Controller
         return response()->json(null, 204);
     }
 
-    /**
-     * Mengimpor data kas masuk dan memberikan laporan hasil.
-     */
     public function import(Request $request)
     {
+        // 1. Validasi diperbarui untuk menerima ID bank
         $validator = Validator::make($request->all(), [
             'file' => 'required|file|mimes:xlsx,csv,xls',
+            'object_zis' => 'required|string|max:255',
+            'uraian' => 'nullable|string',
+            // 'via' sekarang divalidasi sebagai ID yang ada di tabel 'bank'
+            'bank_rekening' => 'required|integer|exists:bank,id', 
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json([
+                'message' => 'Data yang diberikan tidak valid.', 
+                'errors' => $validator->errors()
+            ], 422);
         }
 
+        DB::beginTransaction();
+
         try {
+            // 2. Ambil data bank dari database berdasarkan ID yang dikirim
+            $bank = Bank::find($request->input('bank_rekening'));
+            if (!$bank) {
+                // Pengaman tambahan jika bank tidak ditemukan meskipun sudah divalidasi
+                return response()->json(['message' => 'Bank yang dipilih tidak valid.'], 404);
+            }
+
             $file = $request->file('file');
-            $import = new KasMasukImport();
+            $objectZis = $request->input('object_zis');
+            $uraian = $request->input('uraian');
+            $namaBank = $bank->nama_bank;
+            $nomorRekening = $bank->nomor_rekening;
+            
+            // 4. Instansiasi kelas import dengan data yang sudah terpisah dan bersih
+            $import = new KasMasukImport($objectZis, $uraian, $namaBank, $nomorRekening);
+            
             Excel::import($import, $file);
+
+            DB::commit();
 
             $stats = $import->getStats();
 
             return response()->json([
-                'message' => 'Proses update massal selesai.',
+                'message' => 'Proses impor Kas Masuk berhasil diselesaikan.',
                 'data' => [
-                    'records_updated' => $stats['updated'],
-                    'records_failed_or_skipped' => $stats['failed'],
-                    'failures' => $stats['failures'],
+                    'records_updated' => $stats['updated'] ?? 0,
+                    'records_failed_or_skipped' => $stats['failed'] ?? 0,
+                    'failures' => $stats['failures'] ?? [],
                 ]
             ], 200);
 
         } catch (\Exception $e) {
+            DB::rollBack();
+
+            Log::error('Import Kas Masuk Gagal: ' . $e->getMessage(), [
+                'file' => $request->file('file') ? $request->file('file')->getClientOriginalName() : 'N/A',
+                'exception' => $e
+            ]);
+
             return response()->json([
                 'message' => 'Terjadi kesalahan fatal saat memproses file.',
-                'error' => $e->getMessage()
+                'error' => $e->getMessage(),
+                'line' => $e->getLine()
             ], 500);
         }
     }
@@ -199,6 +233,10 @@ class KasMasukController extends Controller
         $templateProcessor->setValue('NO',''.(\Carbon\Carbon::parse($kasMasuk->tgl_transaksi)->isoFormat('DD/MM/YYYY')).' / '.'km'.' / '.($kasMasuk->jumlah_transaksi ?? '-').' / '.($kasMasuk->no_transaksi ? str_pad($kasMasuk->no_transaksi, 6, '0', STR_PAD_LEFT) : 'N/A'));
         $templateProcessor->setValue('tanggal_transaksi', \Carbon\Carbon::parse($kasMasuk->tgl_transaksi)->isoFormat('DD/MM/YYYY'));
         $templateProcessor->setValue('jumlah_ts', $kasMasuk->jumlah_transaksi ?? '-');
+        $templateProcessor->setValue('object_zis', $kasMasuk->object_zis ?? '-');
+        $templateProcessor->setValue('uraian', $kasMasuk->uraian ?? '-');
+        $templateProcessor->setValue('via', $kasMasuk->via ?? '-');
+        		
     }
 
     /**
