@@ -1,6 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\BankController;
 use App\Http\Controllers\Api\UraianController;
 use App\Http\Controllers\Api\LembagaController;
@@ -40,3 +41,18 @@ Route::post('uraian', [UraianController::class, 'store']);
 Route::delete('uraian/{uraian}', [UraianController::class, 'destroy']);
 
 Route::get('bank', [BankController::class, 'index']);
+
+// Rute untuk registrasi user baru
+Route::post('/register', [AuthController::class, 'register']);
+
+// Rute untuk login
+Route::post('/login', [AuthController::class, 'login']);
+
+// Rute yang memerlukan autentikasi (contoh)
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('/user', function (Request $request) {
+        return $request->user();
+    });
+    
+    Route::post('/logout', [AuthController::class, 'logout']);
+});

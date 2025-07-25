@@ -4,48 +4,85 @@
 
 @push('styles')
 <style>
-    /* * BAGIAN LAYOUT UTAMA 
-     */
+    /* * BAGIAN LAYOUT UTAMA */
     .welcome-container {
-        display: flex; /* Menggunakan Flexbox */
-        align-items: center; /* Posisikan item di tengah (vertikal) */
-        justify-content: center; /* Posisikan item di tengah (horizontal) */
+        display: flex;
+        align-items: center;
+        justify-content: center;
         width: 100%;
-        min-height: 90vh; /* Tinggi minimal agar konten selalu di tengah layar */
+        min-height: 90vh;
         padding: 2rem;
     }
 
     .hero-section {
         width: 100%;
-        max-width: 900px; /* Lebar maksimum konten */
+        max-width: 900px;
         padding: 40px 50px;
         text-align: center;
-        /* Gaya visual seperti background dan shadow tetap di sini */
         background: var(--container-bg, #ffffff);
         border-radius: 12px;
         box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        position: relative; /* Diperlukan untuk posisi absolut tombol logout */
     }
 
-    /* * LAYOUT UNTUK TOMBOL (BUTTON GRID)
+    .hero-section h1 {
+        font-size: 36px;
+        margin-bottom: 10px;
+        color: var(--text-color);
+    }
+
+    .section-subtitle {
+        font-size: 16px;
+        color: var(--subtitle-color, #6c757d);
+        margin-bottom: 40px; /* Beri jarak lebih ke tombol di bawahnya */
+    }
+
+    /* *
+     * GAYA BARU UNTUK TOMBOL LOGOUT (PENEMPATAN DI POJOK KANAN ATAS)
      */
-    .button-grid {
-        display: grid; /* Menggunakan CSS Grid */
-        gap: 25px; /* Jarak antar tombol */
-        
-        /* Default: 1 kolom untuk layar kecil (mobile) */
-        grid-template-columns: 1fr; 
+    .auth-actions {
+        position: absolute;
+        top: 20px;
+        right: 20px;
     }
 
-    /* Tampilan untuk layar tablet dan lebih besar (lebar min 576px) */
+    .btn-auth {
+        display: inline-block;
+        padding: 8px 20px; /* Sedikit lebih kecil agar pas di pojok */
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        border: none;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s;
+    }
+
+    .btn-auth:hover {
+        transform: translateY(-2px);
+    }
+
+    .btn-auth.logout {
+        background-color: #c82333;
+        color: white;
+    }
+    .btn-auth.logout:hover {
+        background-color: #a21b29;
+    }
+
+    /* * LAYOUT DAN GAYA KARTU TOMBOL */
+    .button-grid {
+        display: grid;
+        gap: 25px;
+        grid-template-columns: 1fr;
+    }
+
     @media (min-width: 576px) {
         .button-grid {
-            /* Ubah menjadi 2 kolom */
-            grid-template-columns: repeat(2, 1fr); 
+            grid-template-columns: repeat(2, 1fr);
         }
     }
 
-    /* * GAYA KARTU TOMBOL (Tidak mengubah layout, hanya visual)
-     */
     .button-card {
         display: block;
         background: var(--button-bg, #007bff);
@@ -57,26 +94,32 @@
     }
 
     .button-card:hover {
-        transform: translateY(-5px); /* Efek mengangkat saat disentuh cursor */
+        transform: translateY(-5px);
     }
 
     .button-card .icon { font-size: 3rem; margin-bottom: 15px; }
     .button-card .label { font-size: 1.25rem; font-weight: 500; }
     .button-card p { font-size: 0.9rem; opacity: 0.9; margin: 5px 0 0 0; }
-    .hero-section h1 { font-size: 36px; margin-bottom: 10px; color:var(--text-color) }
-    .section-subtitle { font-size: 16px; color: var(--subtitle-color, #6c757d); margin-bottom: 30px; }
 </style>
 @endpush
 
-
 @section('content')
-{{-- Kontainer utama untuk memusatkan seluruh konten di tengah halaman --}}
 <div class="welcome-container">
     <section class="hero-section">
+        <div class="auth-actions">
+            @auth
+            <form id="logout-form" method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button type="submit" class="btn-auth logout">
+                    <i class="bi bi-box-arrow-right"></i> Logout
+                </button>
+            </form>
+            @endauth
+        </div>
+
         <h1>Sistem Informasi SITBA</h1>
         <p class="section-subtitle">Sistem Transaksi Informasi BAZNAS</p>
 
-        {{-- Grid untuk menata tombol secara responsif --}}
         <div class="button-grid">
             <a href="{{ route('pendaftaran.perorangan') }}" class="button-card">
                 <div class="icon"><i class="bi bi-people-fill"></i></div>
@@ -89,6 +132,9 @@
                 <p>Lihat data pendaftar instansi</p>
             </a>
         </div>
+
     </section>
 </div>
 @endsection
+
+{{-- CATATAN: Kode JavaScript dari sebelumnya tidak diperlukan lagi jika kita menggunakan button type="submit" --}}

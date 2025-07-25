@@ -1,12 +1,12 @@
 <?php
 // File: app/Http/Controllers/Api/KasMasukController.php
 
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\KasMasuk;
 use App\Models\Bank;
+use App\Models\PendaftaranZakat; // Pastikan model ini ada dan benar
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -21,6 +21,9 @@ use Illuminate\Support\Facades\Log;
 
 class KasMasukController extends Controller
 {
+    // ... semua metode Anda yang lain (index, store, dll.) tidak perlu diubah ...
+    // ... saya sertakan lagi untuk kelengkapan ...
+
     public function index()
     {
         $data = KasMasuk::orderBy('tgl_transaksi', 'desc')->get();
@@ -76,69 +79,37 @@ class KasMasukController extends Controller
 
     public function import(Request $request)
     {
-        // 1. Validasi diperbarui untuk menerima ID bank
         $validator = Validator::make($request->all(), [
             'file' => 'required|file|mimes:xlsx,csv,xls',
             'object_zis' => 'required|string|max:255',
             'uraian' => 'nullable|string',
-            // 'via' sekarang divalidasi sebagai ID yang ada di tabel 'bank'
             'bank_rekening' => 'required|integer|exists:bank,id', 
         ]);
 
         if ($validator->fails()) {
-            return response()->json([
-                'message' => 'Data yang diberikan tidak valid.', 
-                'errors' => $validator->errors()
-            ], 422);
+            return response()->json(['message' => 'Data yang diberikan tidak valid.', 'errors' => $validator->errors()], 422);
         }
 
         DB::beginTransaction();
-
         try {
-            // 2. Ambil data bank dari database berdasarkan ID yang dikirim
             $bank = Bank::find($request->input('bank_rekening'));
             if (!$bank) {
-                // Pengaman tambahan jika bank tidak ditemukan meskipun sudah divalidasi
                 return response()->json(['message' => 'Bank yang dipilih tidak valid.'], 404);
             }
-
             $file = $request->file('file');
             $objectZis = $request->input('object_zis');
             $uraian = $request->input('uraian');
             $namaBank = $bank->nama_bank;
             $nomorRekening = $bank->nomor_rekening;
-            
-            // 4. Instansiasi kelas import dengan data yang sudah terpisah dan bersih
             $import = new KasMasukImport($objectZis, $uraian, $namaBank, $nomorRekening);
-            
             Excel::import($import, $file);
-
             DB::commit();
-
             $stats = $import->getStats();
-
-            return response()->json([
-                'message' => 'Proses impor Kas Masuk berhasil diselesaikan.',
-                'data' => [
-                    'records_updated' => $stats['updated'] ?? 0,
-                    'records_failed_or_skipped' => $stats['failed'] ?? 0,
-                    'failures' => $stats['failures'] ?? [],
-                ]
-            ], 200);
-
+            return response()->json(['message' => 'Proses impor Kas Masuk berhasil diselesaikan.', 'data' => ['records_updated' => $stats['updated'] ?? 0, 'records_failed_or_skipped' => $stats['failed'] ?? 0, 'failures' => $stats['failures'] ?? []]], 200);
         } catch (\Exception $e) {
             DB::rollBack();
-
-            Log::error('Import Kas Masuk Gagal: ' . $e->getMessage(), [
-                'file' => $request->file('file') ? $request->file('file')->getClientOriginalName() : 'N/A',
-                'exception' => $e
-            ]);
-
-            return response()->json([
-                'message' => 'Terjadi kesalahan fatal saat memproses file.',
-                'error' => $e->getMessage(),
-                'line' => $e->getLine()
-            ], 500);
+            Log::error('Import Kas Masuk Gagal: ' . $e->getMessage(), ['file' => $request->file('file') ? $request->file('file')->getClientOriginalName() : 'N/A', 'exception' => $e]);
+            return response()->json(['message' => 'Terjadi kesalahan fatal saat memproses file.', 'error' => $e->getMessage(), 'line' => $e->getLine()], 500);
         }
     }
     public function cetakBuktiPdfFromWord(KasMasuk $kasMasuk)
@@ -148,52 +119,77 @@ class KasMasukController extends Controller
             if (!file_exists($templatePath)) {
                 return response()->json(['message' => 'File template Word tidak ditemukan.'], 404);
             }
-
             $templateProcessor = new TemplateProcessor($templatePath);
             $kasMasuk->load('pendaftaran');
             $total = $kasMasuk->zakat + $kasMasuk->zakat_fitrah + $kasMasuk->infak;
-
             $this->fillTemplate($templateProcessor, $kasMasuk, $total);
-
-            // Panggil helper method yang sudah dioptimalkan
             $html = $this->getHtmlFromProcessor($templateProcessor);
             $pdf = Pdf::loadHTML($html);
-            
             $fileName = 'Bukti Setor - ' . ($kasMasuk->pendaftaran->nama ?? $kasMasuk->nama) . '.pdf';
             return $pdf->stream($fileName);
-
         } catch (Exception $e) {
             return response()->json(['message' => 'Gagal membuat dokumen.', 'error' => $e->getMessage()], 500);
         }
     }
 
     /**
-     * FINAL: Mencetak BANYAK bukti setor (batch) dalam satu file PDF dari template Word.
+     * ========================================================================
+     * [METODE YANG DIPERBAIKI] Mencetak BANYAK bukti setor (batch)
+     * ========================================================================
      */
     public function cetakBuktiPdfBatchFromWord(Request $request)
     {
+        // 1. Validasi yang sudah diperbaiki untuk menerima 'ids' ATAU 'limit'
         $validator = Validator::make($request->all(), [
-            'ids' => 'required|array|min:1',
+            'ids' => 'sometimes|required_without:limit|array',
             'ids.*' => 'integer|exists:pendaftaran_zakat,id',
+            'limit' => 'sometimes|required_without:ids|integer|min:1',
         ]);
 
-        if ($validator->fails()) { return response()->json(['errors' => $validator->errors()], 422); }
+        if ($validator->fails()) { 
+            return response()->json(['message' => 'Data ID tidak valid.', 'errors' => $validator->errors()], 422); 
+        }
 
         try {
             $templatePath = storage_path('app/templates/template_bukti_setoran.docx');
-            if (!file_exists($templatePath)) { return response()->json(['message' => 'File template Word tidak ditemukan.'], 404); }
+            if (!file_exists($templatePath)) { 
+                return response()->json(['message' => 'File template Word tidak ditemukan.'], 404); 
+            }
 
-            $kasMasukRecords = KasMasuk::with('pendaftaran')->whereIn('id', $request->input('ids'))->get();
-            if ($kasMasukRecords->isEmpty()) { return response()->json(['message' => 'Data tidak ditemukan.'], 404); }
+            // 2. Logika untuk mengambil data Pendaftar, bukan Kas Masuk
+            $pendaftarQuery = PendaftaranZakat::query();
+
+            if ($request->has('limit')) {
+                $limit = $request->input('limit');
+                $pendaftarRecords = $pendaftarQuery->orderBy('id', 'desc')->take($limit)->get();
+            } else {
+                $ids = $request->input('ids');
+                $pendaftarRecords = $pendaftarQuery->whereIn('id', $ids)->get();
+            }
+
+            if ($pendaftarRecords->isEmpty()) { 
+                return response()->json(['message' => 'Data pendaftar tidak ditemukan.'], 404); 
+            }
 
             $finalHtml = '';
-            foreach ($kasMasukRecords as $index => $kasMasuk) {
+            foreach ($pendaftarRecords as $pendaftar) {
+                $kasMasuk = KasMasuk::where('nik', $pendaftar->nik)->latest()->first();
+                
+                if (!$kasMasuk) {
+                    $kasMasuk = new KasMasuk([
+                        'nama' => $pendaftar->nama, 'npwz' => $pendaftar->npwz ?? 'N/A',
+                        'nik' => $pendaftar->nik, 'alamat_rumah' => $pendaftar->alamat_rumah,
+                        'handphone' => $pendaftar->handphone, 'email' => $pendaftar->email,
+                        'tgl_transaksi' => now(),
+                        'zakat' => 0, 'zakat_fitrah' => 0, 'infak' => 0,
+                    ]);
+                }
+
                 $templateProcessor = new TemplateProcessor($templatePath);
                 $total = $kasMasuk->zakat + $kasMasuk->zakat_fitrah + $kasMasuk->infak;
                 
                 $this->fillTemplate($templateProcessor, $kasMasuk, $total);
                 
-                // Panggil helper method yang sudah dioptimalkan
                 $html = $this->getHtmlFromProcessor($templateProcessor);
                 $finalHtml .= $html;
             }
@@ -206,18 +202,10 @@ class KasMasukController extends Controller
         }
     }
 
-    /**
-     * Helper method untuk mengisi placeholder di template. (Tidak ada perubahan di sini)
-     */
     private function fillTemplate(TemplateProcessor $templateProcessor, KasMasuk $kasMasuk, $total)
     {
-         // 1. Buat instance dari pustaka NumberToWords.
         $numberToWords = new NumberToWords();
-
-        // 2. Dapatkan "transformer" khusus untuk Bahasa Indonesia.
         $numberTransformer = $numberToWords->getNumberTransformer('id');
-
-        // 3. Konversi angka ke dalam kata-kata Bahasa Indonesia.
         $terbilangIndonesia = $numberTransformer->toWords($total);
         
         $templateProcessor->setValue('nama_penyetor', $kasMasuk->nama);
@@ -236,13 +224,8 @@ class KasMasukController extends Controller
         $templateProcessor->setValue('object_zis', $kasMasuk->object_zis ?? '-');
         $templateProcessor->setValue('uraian', $kasMasuk->uraian ?? '-');
         $templateProcessor->setValue('via', $kasMasuk->via ?? '-');
-        		
     }
 
-    /**
-     * --- INI METHOD YANG DIPERBAIKI ---
-     * Helper method untuk mengkonversi prosesor template ke HTML dengan CSS yang dioptimalkan.
-     */
     private function getHtmlFromProcessor(TemplateProcessor $templateProcessor): string
     {
         $tempFilePath = $templateProcessor->save();
@@ -254,21 +237,10 @@ class KasMasukController extends Controller
             unlink($tempFilePath);
         }
 
-        // --- INI KODE PERBAIKANNYA ---
-        // Buat CSS untuk "memadatkan" layout
-        $compactCss = "
-            <style>
-                body { font-family: Courier New, serif; font-size: 20.5pt; }
-                p { margin: 0; padding: 0; line-height: 1.2; }
-                table { border-collapse: collapse; width: 100%; page-break-inside: avoid; }
-                td { padding: 1px 2px !important; }
-            </style>
-        ";
-
-        // Suntikkan (inject) CSS ini ke dalam <head> dari HTML yang dihasilkan
+        $compactCss = "<style> body { font-family: Courier New, serif; font-size: 20.5pt; } p { margin: 0; padding: 0; line-height: 1.2; } table { border-collapse: collapse; width: 100%; page-break-inside: avoid; } td { padding: 1px 2px !important; } </style>";
+        
         $htmlContent = str_replace('</head>', $compactCss . '</head>', $htmlContent);
 
         return $htmlContent;
     }
 }
-

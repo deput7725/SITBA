@@ -124,7 +124,7 @@
     <div class="action-box">
         <div class="row g-3 mb-4 align-items-end">
             <!-- Filter Lembaga -->
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <label for="filter_lembaga" class="form-label fw-bold">Pilih Lembaga</label>
                 <form action="{{ route('pendaftaran.lembaga') }}" method="GET" id="form-filter">
                     <select class="form-select" id="filter_lembaga" name="id_lembaga" onchange="document.getElementById('form-filter').submit();">
@@ -138,7 +138,7 @@
                 </form>
             </div>
              <!-- Pencarian -->
-            <div class="col-md-4">
+            <div class="col-md-6">
                 <form action="{{ route('pendaftaran.lembaga') }}" method="GET">
                     <label for="search" class="form-label fw-bold">Cari</label>
                     <div class="input-group">
@@ -148,17 +148,26 @@
                     </div>
                 </form>
             </div>
-             <!-- Aksi Massal (Cetak & Hapus) -->
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Aksi Massal</label>
-                <div class="btn-group w-100" role="group">
-                    <button id="btnPrintSelected" class="btn btn-action" disabled>
-                       <i class="bi bi-printer-fill"></i> Cetak (<span id="selectedCountPrint">0</span>)
-                   </button>
-                   <button id="btnDeleteSelected" class="btn btn-danger" disabled>
-                       <i class="bi bi-trash-fill"></i> Hapus (<span id="selectedCountDelete">0</span>)
-                   </button>
+        </div>
+        
+        <hr>
+
+        <!-- [UBAH] Aksi Cetak & Hapus dengan Desain Baru -->
+        <div class="row g-3">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text">Cetak data terbaru:</span>
+                    <input type="number" class="form-control" id="printAmountInput" placeholder="Isi jumlah (misal: 20)" min="1" style="max-width: 200px;">
+                    <button id="btnPrintCombined" class="btn btn-action text-white">
+                        <i class="bi bi-printer"></i> Cetak
+                    </button>
                 </div>
+                <div class="form-text">Prioritas: Jika ada data yang dicentang, tombol akan mencetak yang dipilih.</div>
+            </div>
+            <div class="col-md-4">
+                <button id="btnDeleteSelected" class="btn btn-danger w-100" disabled>
+                    <i class="bi bi-trash-fill"></i> Hapus yang Dipilih (<span id="selectedCountDelete">0</span>)
+                </button>
             </div>
         </div>
 
@@ -211,9 +220,9 @@
                         <div class="mb-3" id="add-uraian-container" style="display: none;">
                              <label for="new_uraian_text" class="form-label">Teks Uraian Baru:</label>
                              <div class="input-group">
-                                <input type="text" id="new_uraian_text" class="form-control" placeholder="Contoh: Zakat Perdagangan...">
-                                <button class="btn btn-success" type="button" id="btn-save-uraian">Simpan</button>
-                                <button class="btn btn-secondary" type="button" id="btn-cancel-add-uraian">Batal</button>
+                                 <input type="text" id="new_uraian_text" class="form-control" placeholder="Contoh: Zakat Perdagangan...">
+                                 <button class="btn btn-success" type="button" id="btn-save-uraian">Simpan</button>
+                                 <button class="btn btn-secondary" type="button" id="btn-cancel-add-uraian">Batal</button>
                              </div>
                         </div>
                     </div>
@@ -337,16 +346,17 @@ document.addEventListener('DOMContentLoaded', function () {
     const btnCancelAddUraian = document.getElementById('btn-cancel-add-uraian');
     const selectAllCheckbox = document.getElementById('selectAllCheckbox');
     const rowCheckboxes = document.querySelectorAll('.row-checkbox');
-    const printButton = document.getElementById('btnPrintSelected');
     const deleteButton = document.getElementById('btnDeleteSelected');
-    const selectedCountPrintSpan = document.getElementById('selectedCountPrint');
     const selectedCountDeleteSpan = document.getElementById('selectedCountDelete');
+
+    // [BARU] Variabel untuk tombol cetak cerdas
+    const printCombinedButton = document.getElementById('btnPrintCombined');
+    const printAmountInput = document.getElementById('printAmountInput');
 
     let uraianData = {};
     let bankData = {};
 
-    // --- LOGIKA UTAMA ---
-
+    // --- SEMUA FUNGSI LAMA ANDA ADA DI SINI (LENGKAP) ---
     async function fetchInitialData() {
         try {
             const [uraianResponse, bankResponse] = await Promise.all([
@@ -501,9 +511,6 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    fetchInitialData();
-
-    // --- Sisa Logika (Upload, Cetak, Hapus) ---
     async function handleUpload(form, url) {
         const formData = new FormData(form);
         const submitButton = form.querySelector('button[type="submit"]');
@@ -562,18 +569,32 @@ document.addEventListener('DOMContentLoaded', function () {
             if(targetUrl) handleUpload(this, targetUrl);
         });
     }
+    
+    fetchInitialData();
 
+    // --- FUNGSI UNTUK AKSI MASAL (SELEKSI, HAPUS, CETAK) ---
     function getSelectedIds() {
-        return Array.from(rowCheckboxes).filter(cb => cb.checked).map(cb => cb.value);
+        return Array.from(rowCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => parseInt(cb.value, 10));
     }
 
     function updateActionButtonsState() {
-        const count = getSelectedIds().length;
+        const selectedIds = getSelectedIds();
+        const count = selectedIds.length;
         const areAnySelected = count > 0;
-        if(selectedCountPrintSpan) selectedCountPrintSpan.textContent = count;
+
         if(selectedCountDeleteSpan) selectedCountDeleteSpan.textContent = count;
-        if(printButton) printButton.disabled = !areAnySelected;
         if(deleteButton) deleteButton.disabled = !areAnySelected;
+
+        // [BARU] Logika untuk tombol cetak gabungan
+        if (printCombinedButton) {
+            if (areAnySelected) {
+                printCombinedButton.innerHTML = `<i class="bi bi-check2-square"></i> Cetak Terpilih (${count})`;
+            } else {
+                printCombinedButton.innerHTML = `<i class="bi bi-printer"></i> Cetak`;
+            }
+        }
     }
 
     if(selectAllCheckbox) {
@@ -582,47 +603,88 @@ document.addEventListener('DOMContentLoaded', function () {
             updateActionButtonsState();
         });
     }
-
     rowCheckboxes.forEach(checkbox => {
         checkbox.addEventListener('change', function () {
-            selectAllCheckbox.checked = getSelectedIds().length === rowCheckboxes.length;
+            if (selectAllCheckbox) {
+                selectAllCheckbox.checked = getSelectedIds().length === rowCheckboxes.length;
+            }
             updateActionButtonsState();
         });
     });
 
-    if(printButton) {
-        printButton.addEventListener('click', async function () {
-            const ids = getSelectedIds();
-            if (ids.length === 0) return;
+    /**
+     * ========================================================================
+     * [LOGIKA BARU] Event listener untuk tombol cetak cerdas
+     * ========================================================================
+     */
+    if (printCombinedButton) {
+        printCombinedButton.addEventListener('click', async function() {
+            let idsToPrint = getSelectedIds();
+            const amount = parseInt(printAmountInput.value, 10);
+            let downloadFilename = 'laporan-pendaftar-lembaga.pdf';
+
+            if (idsToPrint.length > 0) {
+                // PRIORITAS 1: Gunakan ID yang sudah dicentang
+                downloadFilename = `laporan-pendaftar-lembaga-terpilih.pdf`;
+            } else if (amount > 0) {
+                // PRIORITAS 2: Jika tidak ada yang dicentang, ambil ID dari tabel
+                const allIdsOnPage = Array.from(rowCheckboxes).map(cb => parseInt(cb.value, 10));
+                
+                if (allIdsOnPage.length < amount) {
+                    alert(`Hanya ada ${allIdsOnPage.length} data di halaman ini. Tidak bisa mencetak ${amount} data.`);
+                    return;
+                }
+                
+                idsToPrint = allIdsOnPage.slice(0, amount);
+                downloadFilename = `laporan-pendaftar-lembaga-terbaru-${amount}-data.pdf`;
+
+            } else {
+                alert('Silakan pilih data dengan checkbox, atau isi jumlah data yang akan dicetak.');
+                return;
+            }
+            
+            if (idsToPrint.length === 0) {
+                alert('Tidak ada data yang dipilih untuk dicetak.');
+                return;
+            }
+
             this.disabled = true;
+            const originalText = this.innerHTML;
             this.innerHTML = `<span class="spinner-border spinner-border-sm"></span> Mencetak...`;
+
             try {
                 const response = await fetch("{{ route('pendaftaran.cetak.batch') }}", {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Accept': 'application/pdf', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
-                    body: JSON.stringify({ ids: ids })
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/pdf',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({ ids: idsToPrint }) // Selalu kirim 'ids'
                 });
+
                 if (response.ok) {
                     const blob = await response.blob();
                     const url = window.URL.createObjectURL(blob);
                     const a = document.createElement('a');
                     a.style.display = 'none'; a.href = url;
-                    a.download = 'laporan-pendaftar-terpilih.pdf';
+                    a.download = downloadFilename;
                     document.body.appendChild(a); a.click();
                     window.URL.revokeObjectURL(url); a.remove();
-                } else { 
-                    const errorData = await response.json().catch(() => ({ message: 'Gagal membaca respons error.' }));
-                    alert(`Gagal membuat laporan: ${errorData.message}`);
+                } else {
+                    const errorData = await response.json().catch(() => ({ message: 'Gagal membuat laporan.' }));
+                    alert(`Error: ${errorData.message}`);
                 }
-            } catch (error) { 
-                alert('Terjadi kesalahan jaringan saat mencetak.'); 
+            } catch (error) {
+                alert('Terjadi kesalahan jaringan saat mencetak.');
             } finally {
-                this.innerHTML = `<i class="bi bi-printer-fill"></i> Cetak (<span id="selectedCountPrint">${getSelectedIds().length}</span>)`;
-                updateActionButtonsState();
+                this.disabled = false;
+                this.innerHTML = originalText;
+                updateActionButtonsState(); 
             }
         });
     }
-    
+
     if(deleteButton) {
         deleteButton.addEventListener('click', async function () {
             const ids = getSelectedIds();
