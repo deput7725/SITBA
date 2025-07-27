@@ -73,24 +73,24 @@ Set-ExecutionPolicy Bypass -Scope Process -Force; [System.Net.ServicePointManage
 composer global require laravel/installer
 ```
 
-### 2.  instal pagase php
+### 3.  instal pagase php
 buka CommandPromt(CMD) and masuk ke direktori project dan jalan kan perintah ini
 ```bash
 composer install
 ```
-### 3. Install Package
+### 4. Install Package
 jalan kan perintah ini di CMD atau Terminal VS code 
 ```bash
 npm install
 npm run build
 ```
-### 4. migration
+### 5. migration
 jalan kan perintah ini di CMD atau Terminal VS code 
 ```bash
 php artisan migrate
 ```
 next type yes
-### 5. Run Laravel
+### 6. Run Laravel
 perintah ini dapat di jalankan di CMD atau Terminal VS code 
 ```bash
 php artisan serve
